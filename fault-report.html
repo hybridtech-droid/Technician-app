@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fault report - TechAssist</title>
+</head>
+<body>
+
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="fault-report.html">Report a fault</a>
+    </nav>
+
+    <h1>Submit a fault report</h1>
+    <p>Fill in the details below. The AI will analyse your report and suggest a diagnosis.</p>
+
+    <form>
+
+        <label for="tech-name">Technician name</label>
+        <input type=" id="tech-name"
+               placeholder="Enter your fullw name"
+               required>
+
+        <labe for="tech-id">Technician ID</label>
+        <input type="text" id="tech-id"
+               placeholder="e.g. TECH-0042"
+               required>
+
+        <label for="equipment-id">Equipment ID</label>
+        <input type="text" id="equipment-id"
+               placeholder="e.g. PUMP-003"
+               required>
+               
+        <label for="location">Site location</label>
+        <input type="text" id="location"
+               placeholder="e.g. Lagos - Apapa terminal"
+               required>
+
+        <label for="fault-type">Fault type</label>
+        <select id="fault-type" required>
+            <option value="">-- Select fault type --</option>
+            <option value="electrical">Electrical</option>
+            <option value="biomedical">Biomedical</option>
+            <option value="mechanical">Mechanical</option>
+            <option value="electronic">Electronics and instrumentation</option>
+            <option value="hvac">HVAC and refrigeration</option>
+            <option value="software">Software and controls</option>
+            <option value="structural">Structural and civil</option>
+            <option value="other">Other</option>
+        </select>
+
+        <label for="severity">Fault severity</label>
+        <select id="severity" required>
+            <option value="">-- Select severity --</option>
+            <option value="critical">Critical - equipment completely down</option>
+            <option value="high">High - serious performance loss</option>
+            <option value="medium">Medium - partial fault, still running</option>
+            <option value="low">Low - minor issue, monitor for now</option>
+        </select>
+
+        <label for="description">Fault description</label>
+        <textarea id="description'
+                  rows="6"
+                  placeholder="Describe exactly what you observed - sounds, smells, error codes, what happened before the fault..."
+                  required></textarea>
+
+        <label for="fault-photo">Upload fault photo</label>
+        <input type="file" id="fault-photo" accept="image/*">
+
+        <br>
+
+        <button type="submit">Submit fault report</button>
+        <p>How did the fault occur?</p>
+
+        <input type="radio" id="sudden" name="fault-cause" value="sudden">
+        <label for="sudden">Sudden failure</label>
+
+        <input type="radio" id="gradual" name="fault-cause" value="gradual">
+        <label for="gradual">Gradual degradation</label>
+
+        <input type="radio" id="external" name="fault-cause" value="external">
+        <label for="external">External damage</label>
+
+        <input type="radio" id="unknown" name="fault-cause" value="unknown">
+        <label for="unknown">Unknown cause</label>
+        
+    </form>
+
+</body>
+</html>
+
+
