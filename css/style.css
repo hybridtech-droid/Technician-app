@@ -190,3 +190,15 @@ tr:hover {
     font-weight: 700;
     margin-right: auto;
 }
+
+input[type="radio"] {
+    display: inline;
+    width: auto;
+    margin-right: 8px;
+}
+
+input[type="checkbox"] {
+    display: inline;
+    width: auto;
+    margin-right: 8px;
+}
