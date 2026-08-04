@@ -17,6 +17,21 @@
         <a href="fault-log.html">Fault log</a>
         <a href="login.html">Login</a>
         <a href="signup.html">Sign up</a>
+        <select class="lang-selector" title="Select language">
+                <option value="en">English</option>
+                <option value="fr">Français</option>
+                <option value="es">Español</option>
+                <option value="de">Deutsch</option>
+                <option value="pt">Português</option>
+                <option value="ar">العربية</option>
+                <option value="zh">中文</option>
+                <option value="hi">हिन्दी</option>
+                <option value="sw">Kiswahili</option>
+                <option value="ru">Русский</option>
+                <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+                <option value="sv">Svenska</option>
+        </select>
     </nav>
   </header>
 
@@ -68,14 +83,16 @@
                placeholder="Re-enter your password"
                required>
 
-        <label>
+        <label class="form-legal">
             <input type="checkbox" id="terms" required>
-            I have read and agree to the <a href="terms.html" target="_blank">Terms and Conditions</a> and <a href="privacy.html" target="_blank">Privacy Policy</a>.
+            <span>I have read and agree to the <a href="terms.html" target="_blank" class="legal-highlight">Terms and Conditions</a> and 
+                <a href="privacy.html" target="_blank" class="legal-highlight">Privacy Policy</a>.
+            </span>
         </label>
 
-        <label>
+        <label class="form-legal">
             <input type="checkbox" id="disclaimer" required>
-            I understad that AI-generated fault diagnoses are suggestions only and must be verified by a qualified engineer before any action is taken.
+            <span>I understad that AI-generated fault diagnoses are suggestions only and must be verified by a qualified engineer before any action is taken.
         </label>
 
         <button type="submit">Create account</button>

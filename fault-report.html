@@ -17,24 +17,34 @@
         <a href="fault-log.html">Fault log</a>
         <a href="login.html">Login</a>
         <a href="signup.html">Sign up</a>
+        <select class="lang-selector" title="Select language">
+                <option value="en">English</option>
+                <option value="fr">Français</option>
+                <option value="es">Español</option>
+                <option value="de">Deutsch</option>
+                <option value="pt">Português</option>
+                <option value="ar">العربية</option>
+                <option value="zh">中文</option>
+                <option value="hi">हिन्दी</option>
+                <option value="sw">Kiswahili</option>
+                <option value="ru">Русский</option>
+                <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+                <option value="sv">Svenska</option>
+        </select>
       </nav>
     </header>
 
     <main>
-        
+
       <h1>Submit a fault report</h1>
       <p>Fill in the details below. The AI will analyse your report and suggest a diagnosis.</p>
       <form>
 
         <label for="tech-name">Technician name</label>
-        <input type=" id="tech-name"
-               placeholder="Enter your full name"
-               required>
-
+        <input type="text" id="tech-name" placeholder="Enter your full name" required>
         <labe for="tech-id">Technician ID</label>
-        <input type="text" id="tech-id"
-               placeholder="e.g. TECH-0042"
-               required>
+        <input type="text" id="tech-id" placeholder="e.g. TECH-0042" required>
 
         <label for="equipment-id">Equipment ID</label>
         <input type="text" id="equipment-id"
@@ -79,17 +89,25 @@
 
         <p>How did the fault occur?</p>
 
-        <input type="radio" id="sudden" name="fault-cause" value="sudden">
-        <label for="sudden">Sudden failure</label>
+        <div class="radio-group">
+          <input type="radio" id="sudden" name="fault-cause" value="sudden">
+          <label for="sudden" style="display:inline;">Sudden failure</label>
+        </div>
 
-        <input type="radio" id="gradual" name="fault-cause" value="gradual">
-        <label for="gradual">Gradual degradation</label>
+        <div class="radio-group">
+          <input type="radio" id="gradual" name="fault-cause" value="gradual">
+          <label for="gradual" style="display:inline;">Gradual degradation</label>
+        </div>
 
-        <input type="radio" id="external" name="fault-cause" value="external">
-        <label for="external">External damage</label>
+        <div class="radio-group">
+          <input type="radio" id="external" name="fault-cause" value="external">
+          <label for="external" style="display:inline;">External damage</label>
+        </div>
 
-        <input type="radio" id="unknown" name="fault-cause" value="unknown">
-        <label for="unknown">Unknown cause</label>
+        <div class="radio-group">
+          <input type="radio" id="unknown" name="fault-cause" value="unknown">
+          <label for="unknown" style="display:inline;">Unknown cause</label>
+        </div>
 
         <br>
 
