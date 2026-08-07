@@ -37,83 +37,117 @@
 
     <main>
 
+  <div class="page-card">
+
+    <div class="page-card-header">
       <h1>Submit a fault report</h1>
       <p>Fill in the details below. The AI will analyse your report and suggest a diagnosis.</p>
-      <form>
+    </div>
 
-        <label for="tech-name">Technician name</label>
-        <input type="text" id="tech-name" placeholder="Enter your full name" required>
-        <labe for="tech-id">Technician ID</label>
-        <input type="text" id="tech-id" placeholder="e.g. TECH-0042" required>
+    <form>
 
-        <label for="equipment-id">Equipment ID</label>
-        <input type="text" id="equipment-id"
-               placeholder="e.g. PUMP-003"
-               required>
-               
-        <label for="location">Site location</label>
-        <input type="text" id="location"
-               placeholder="e.g. Lagos - Apapa terminal"
-               required>
+      <div class="form-grid">
 
-        <label for="fault-type">Fault type</label>
-        <select id="fault-type" required>
+        <div class="form-group">
+          <label for="tech-name">Technician name</label>
+          <input type="text" id="tech-name"
+                 placeholder="Enter your full name"
+                 required>
+        </div>
+
+        <div class="form-group">
+          <label for="tech-id">Technician ID</label>
+          <input type="text" id="tech-id"
+                 placeholder="e.g. TECH-0042"
+                 required>
+        </div>
+
+        <div class="form-group">
+          <label for="equipment-id">Equipment ID</label>
+          <input type="text" id="Equipment-id"
+                 placeholder="e.g. PUMP-003"
+                 required>
+        </div>
+
+        <div class="form-group">
+          <label for="location">Site location</label>
+          <input type="text" id="location"
+                 placeholder="e.g. Lagos — Apapa terminal"
+                 required>
+        </div>
+
+        <div class="form-group">
+          <label for="fault-type">Fault type</label>
+          <select id="fault-type" required>
             <option value="">-- Select fault type --</option>
             <option value="electrical">Electrical</option>
-            <option value="biomedical">Biomedical</option>
             <option value="mechanical">Mechanical</option>
-            <option value="electronic">Electronics and instrumentation</option>
+            <option value="electronic">Electronic and instrumentation</option>
             <option value="hvac">HVAC and refrigeration</option>
             <option value="software">Software and controls</option>
             <option value="structural">Structural and civil</option>
+            <option value="biomedical">Biomedical</option>
             <option value="other">Other</option>
-        </select>
+          </select>
+        </div>
 
-        <label for="severity">Fault severity</label>
-        <select id="severity" required>
+        <div class="form-group">
+          <label for="severity">Fault severity</label>
+          <select id="severity" required>
             <option value="">-- Select severity --</option>
-            <option value="critical">Critical - equipment completely down</option>
-            <option value="high">High - serious performance loss</option>
-            <option value="medium">Medium - partial fault, still running</option>
-            <option value="low">Low - minor issue, monitor for now</option>
-        </select>
+            <option value="critical">Critical — equipment completely down</option>
+            <option value="high">High — serious performance loss</option>
+            <option value="medium">Medium — partial fault, still running</option>
+            <option value="low">Low — minor issue, monitor for now</option>
+          </select>
+        </div>
 
+      </div>
+
+      <div class="form-group">
         <label for="description">Fault description</label>
-        <textarea id="description'
-                  rows="6"
-                  placeholder="Describe exactly what you observed - sounds, smells, error codes, what happened before the fault..."
-                  required></textarea>
+        <textarea id="description" rows="5"
+          placeholder="Describe exactly what you observed — sounds, smells, error codes, what happened before the fault..."
+          required></textarea>
+      </div>
 
+      <div class="form-group">
         <label for="fault-photo">Upload fault photo</label>
-        <input type="file" id="fault-photo" accept="image/*">
+        <div class="file-upload-box">
+          <input type="file" id="fault-photo" 
+           accept="image/*"
+           style="display:none;">
+          <label for="fault-photo" class="file-upload-label">Choose a photo</label>
+        <span class="file-name-display" id="file-name">No photo selected</span>
+        </div>
+      </div>
 
-        <p>How did the fault occur?</p>
-
+      <div class="form-group">
+        <label>How did the fault occur?</label>
         <div class="radio-group">
           <input type="radio" id="sudden" name="fault-cause" value="sudden">
-          <label for="sudden" style="display:inline;">Sudden failure</label>
+          <label for="sudden" style="display:inline; font-weight:400;">Sudden failure</label>
         </div>
-
         <div class="radio-group">
           <input type="radio" id="gradual" name="fault-cause" value="gradual">
-          <label for="gradual" style="display:inline;">Gradual degradation</label>
+          <label for="gradual" style="display:inline; font-weight:400;">Gradual degradation</label>
         </div>
-
         <div class="radio-group">
           <input type="radio" id="external" name="fault-cause" value="external">
-          <label for="external" style="display:inline;">External damage</label>
+          <label for="external" style="display:inline; font-weight:400;">External damage</label>
         </div>
-
         <div class="radio-group">
           <input type="radio" id="unknown" name="fault-cause" value="unknown">
-          <label for="unknown" style="display:inline;">Unknown cause</label>
+          <label for="unknown" style="display:inline; font-weight:400;">Unknown cause</label>
         </div>
+      </div>
 
-        <br>
+      <button type="submit">Submit fault report</button>
 
-        <button type="submit">Submit fault report</button>
+    </form>
 
-     </form>
+  </div>
+
     </main>
 
 </body>

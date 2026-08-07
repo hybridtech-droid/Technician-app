@@ -85,6 +85,10 @@ form {
     margin: 0 auto;
 }
 
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
 label {
     display: block;
     font-size: 14px;
@@ -543,4 +547,83 @@ margin-right: 8px;
 .login-card a:hover,
 .reset-link a:hover {
     color: #007494;
+}
+
+.table-wrap {
+    overflow-x: auto;
+    width: 100%;
+}
+
+.table-wrap table {
+    min-width: 700px;
+    border-collapse: collapse;
+}
+
+.page-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  padding: 40px;
+  max-width: 760px;
+  margin: 40px auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+.page-card-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e8f4f8;
+}
+
+.page-card-header h1 {
+  font-size: 24px;
+  margin-bottom: 6px;
+}
+
+.page-card-header p {
+  font-size: 14px;
+  color: #555555;
+  margin: 0;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0 20px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.file-upload-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px dashed #b0dce8;
+  border-radius: 6px;
+  background-color: #f0f9ff;
+}
+
+.file-upload-label {
+  background-color: #0096b7;
+  color: #ffffff;
+  padding: 7px 16px;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-block;
+  margin: 0;
+}
+
+.file-upload-label:hover {
+  background-color: #007a96;
+}
+
+.file-name-display {
+  font-size: 13px;
+  color: #888888;
 }
