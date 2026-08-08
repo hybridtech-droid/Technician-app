@@ -11,10 +11,13 @@
     <header>
         <nav>
             <span class="brand">iTechAssist</span>
-            <a href="index.html">Home</a>
-            <a href="login.html">Login</a>
-            <a href="signup.html">Sign up</a>
-            <select class="lang-selector" title="Select language">
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">☰</button>
+            <div class="nav-links">
+              <a href="index.html">Home</a>
+              <a href="login.html">Login</a>
+              <a href="signup.html">Sign up</a>
+            </div>
+            <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language">
                 <option value="en">English</option>
                 <option value="fr">Français</option>
                 <option value="es">Español</option>
@@ -62,5 +65,6 @@
         <p>iTechAssist - 2026</p>
     </footer>
 
+<script src="js/main.js"></script>
 </body>
 </html>

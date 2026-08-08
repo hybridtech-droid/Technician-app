@@ -9,15 +9,18 @@
 <body>
 
     <header>
-      <nav>
+    <nav>
         <span class="brand">iTechAssist</span>
-        <a href="index.html">Home</a>
-        <a href="about.html">About</a>
-        <a href="fault-report.html">Report a fault</a>
-        <a href="fault-log.html">Fault log</a>
-        <a href="login.html">Login</a>
-        <a href="signup.html">Sign up</a>
-        <select class="lang-selector" title="Select language">
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">☰</button>
+        <div class="nav-links">
+          <a href="index.html">Home</a>
+          <a href="about.html">About</a>
+          <a href="fault-report.html">Report a fault</a>
+          <a href="fault-log.html">Fault log</a>
+          <a href="login.html">Login</a>
+          <a href="signup.html">Sign up</a>
+        </div>
+        <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language">
                 <option value="en">English</option>
                 <option value="fr">Français</option>
                 <option value="es">Español</option>
@@ -32,13 +35,13 @@
                 <option value="ko">한국어</option>
                 <option value="sv">Svenska</option>
         </select>
-      </nav>
-    </header>
+    </nav>
+</header>
 
     <main>
      <div class="auth-card">
       <h1>Log in to iTechAssist</h1>
-      <p>Do not have an account yet?</p>
+      <p>Do not have an account yet?>
         <a href="signup.html">Sign up here</a>
       </p>
       <form>
@@ -76,6 +79,7 @@
     <p>iTechAssist - 2026</p>
   </footer>
 
+<script src="js/main.js"></script>
 </body>
 </html>
 

@@ -11,13 +11,16 @@
     <header>
       <nav>
         <span class="brand">iTechAssist</span>
-        <a href="index.html">Home</a>
-        <a href="about.html">About</a>
-        <a href="fault-report.html">Report a fault</a>
-        <a href="fault-log.html">Fault log</a>
-        <a href="login.html">Login</a>
-        <a href="signup.html">Sign up</a>
-        <select class="lang-selector" title="Select language">
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">☰</button>
+        <div class="nav-links">
+          <a href="index.html">Home</a>
+          <a href="about.html">About</a>
+          <a href="fault-report.html">Report a fault</a>
+          <a href="fault-log.html">Fault log</a>
+          <a href="login.html">Login</a>
+          <a href="signup.html">Sign up</a>
+        </div>
+        <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language">
                 <option value="en">English</option>
                 <option value="fr">Français</option>
                 <option value="es">Español</option>
@@ -31,54 +34,46 @@
                 <option value="ja">日本語</option>
                 <option value="ko">한국어</option>
                 <option value="sv">Svenska</option>
-        </select>
+        </select>  
       </nav>
     </header>
 
     <main>
 
-  <div class="page-card">
+    <div class="page-card">
 
-    <div class="page-card-header">
+     <div class="page-card-header">
       <h1>Submit a fault report</h1>
       <p>Fill in the details below. The AI will analyse your report and suggest a diagnosis.</p>
-    </div>
+     </div>
 
-    <form>
+    <form action="#" method="post" enctype="multipart/form-data">
 
       <div class="form-grid">
 
         <div class="form-group">
           <label for="tech-name">Technician name</label>
-          <input type="text" id="tech-name"
-                 placeholder="Enter your full name"
-                 required>
+          <input type="text" id="technician-name" name="technician-name" placeholder="Enter your full name" required>
         </div>
 
         <div class="form-group">
           <label for="tech-id">Technician ID</label>
-          <input type="text" id="tech-id"
-                 placeholder="e.g. TECH-0042"
-                 required>
+          <input type="text" id="technician-id" name="technician-id" placeholder="e.g. TECH-0042" required>
         </div>
 
         <div class="form-group">
           <label for="equipment-id">Equipment ID</label>
-          <input type="text" id="Equipment-id"
-                 placeholder="e.g. PUMP-003"
-                 required>
+          <input type="text" id="equipment-id" name="equipment-id" placeholder="e.g. PUMP-003" required>
         </div>
 
         <div class="form-group">
-          <label for="location">Site location</label>
-          <input type="text" id="location"
-                 placeholder="e.g. Lagos — Apapa terminal"
-                 required>
+          <label for="site-location">Site location</label>
+          <input type="text" id="site-location" name="site-location" placeholder="e.g. Lagos — Apapa terminal" required>
         </div>
 
         <div class="form-group">
           <label for="fault-type">Fault type</label>
-          <select id="fault-type" required>
+          <select id="fault-type" name="fault-type" required>
             <option value="">-- Select fault type --</option>
             <option value="electrical">Electrical</option>
             <option value="mechanical">Mechanical</option>
@@ -92,8 +87,8 @@
         </div>
 
         <div class="form-group">
-          <label for="severity">Fault severity</label>
-          <select id="severity" required>
+          <label for="fault-severity">Fault severity</label>
+          <select id="fault-severity" name="fault-severity" required>
             <option value="">-- Select severity --</option>
             <option value="critical">Critical — equipment completely down</option>
             <option value="high">High — serious performance loss</option>
@@ -105,8 +100,8 @@
       </div>
 
       <div class="form-group">
-        <label for="description">Fault description</label>
-        <textarea id="description" rows="5"
+        <label for="fault-description">Fault description</label>
+        <textarea id="fault-description" name="fault-description" rows="5"
           placeholder="Describe exactly what you observed — sounds, smells, error codes, what happened before the fault..."
           required></textarea>
       </div>
@@ -114,30 +109,28 @@
       <div class="form-group">
         <label for="fault-photo">Upload fault photo</label>
         <div class="file-upload-box">
-          <input type="file" id="fault-photo" 
-           accept="image/*"
-           style="display:none;">
+          <input type="file" id="fault-photo" name="fault-photo" accept="image/*" style="display:none;">
           <label for="fault-photo" class="file-upload-label">Choose a photo</label>
         <span class="file-name-display" id="file-name">No photo selected</span>
         </div>
       </div>
 
       <div class="form-group">
-        <label>How did the fault occur?</label>
+        <label for="sudden">How did the fault occur?</label>
         <div class="radio-group">
-          <input type="radio" id="sudden" name="fault-cause" value="sudden">
+          <input type="radio" id="sudden" name="fault-onset" value="sudden">
           <label for="sudden" style="display:inline; font-weight:400;">Sudden failure</label>
         </div>
         <div class="radio-group">
-          <input type="radio" id="gradual" name="fault-cause" value="gradual">
+          <input type="radio" id="gradual" name="fault-onset" value="gradual">
           <label for="gradual" style="display:inline; font-weight:400;">Gradual degradation</label>
         </div>
         <div class="radio-group">
-          <input type="radio" id="external" name="fault-cause" value="external">
+          <input type="radio" id="external" name="fault-onset" value="external">
           <label for="external" style="display:inline; font-weight:400;">External damage</label>
         </div>
         <div class="radio-group">
-          <input type="radio" id="unknown" name="fault-cause" value="unknown">
+          <input type="radio" id="unknown" name="fault-onset" value="unknown">
           <label for="unknown" style="display:inline; font-weight:400;">Unknown cause</label>
         </div>
       </div>
@@ -146,15 +139,16 @@
 
     </form>
 
-  </div>
+    </div>
 
     </main>
 
-</body>
     <footer>
         <p>iTA - AI powered fault diagnosis for engineers and technicians</p>
         <p>iTechAssist - 2026</p>
     </footer>
+  <script src="js/main.js"></script>
+</body>
 </html>
 
 
