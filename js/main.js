@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   
   let resultBox = document.getElementById('diagnosis-result');
-  let resultText = document.getElementById('diagnosis');
+  let resultText = document.getElementById('diagnosis-text');
 
   let faultForm = document.getElementById('fault-form');
 
