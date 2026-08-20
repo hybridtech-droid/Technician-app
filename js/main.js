@@ -1,11 +1,25 @@
-document.addEventListener('DOMContentLoaded', function () {
-  let loginLink = document.querySelector('a[href="login.html"]');
+function getDiagnosis(faultType, severity) {
+  let suggestions = {
+    electrical: 'Check supply voltage, breaker condition, and terminal tightness. Inspect cabling for insulation damage or heat discolouration.',
+    mechanical: 'Inspect bearings, couplings, and alignment. Check lubrication levels and listen for changes in running noise under load.',
+    electronic: 'Verify sensor output against a known reference. Check signal wiring for continuity and inspect boards for damaged components.',
+    hvac: 'Check refrigerant pressures, filter condition, and airflow. Inspect the condenser coil for fouling.',
+    software: 'Review controller logs around the fault time. Confirm firmware version and check for corrupted configuration.',
+    structural: 'Inspect mounting points, welds, and fasteners for cracking or movement. Check foundation for settling.',
+    biomedical: 'Run the manufacturer self-test and check calibration records. Verify power supply stability.',
+    other: 'Insufficient category data. Escalate to a senior engineer with full observation notes.'
+  };
 
-  if (loginLink) {
-    loginLink.addEventListener('click', function () {
-      console.log('Login link clicked');
-    });
+  let text = suggestions[faultType] || suggestions.other;
+
+  if (severity === 'critical') {
+    text = 'PRIORITY — isolate the equipment before working on it. ' + text;
   }
+
+  return text;
+}
+
+document.addEventListener('DOMContentLoaded', function () {
 
   let menuToggle = document.getElementById('menuToggle');
   let navLinks = document.querySelector('.nav-links');
@@ -42,10 +56,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
       resultBox.hidden = false;
       resultText.textContent = 'Analysing report...';
-      console.log('--- fault report submitted ---');
-      data.forEach(function (value, key) {
-        console.log(key, '=', value);
-      });
+
+      setTimeout(function () {
+        resultText.textContent = getDiagnosis(
+          data.get('fault-type'),
+          data.get('fault-severity')
+        );
+      }, 1200);
     });
   }
 });
