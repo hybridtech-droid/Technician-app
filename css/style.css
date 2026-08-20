@@ -30,7 +30,7 @@ nav {
 }
 
 nav a {
-    color: #ffffff
+    color: #ffffff;
     text-decoration: none;
 }
 
@@ -104,6 +104,15 @@ label {
     color: #1a1a2e;
     margin-top: 16px;
     margin-bottom: 4px;
+}
+
+.field-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a2e;
+  margin-top: 16px;
+  margin-bottom: 4px;
 }
 
 input[type="text"],
@@ -221,6 +230,12 @@ margin-right: 8px;
 .radio-group {
     margin-top: 8px;
     margin-bottom: 4px;
+}
+
+.radio-group label {
+    display: inline;
+    font-weight: 400;
+    margin: 0;
 }
 
 .hero {
@@ -550,7 +565,7 @@ margin-right: 8px;
 }
 
 .auth-card a {
-    color: #0096b7
+    color: #0096b7;
     text-decoration: underline;
     font-weight: 600;
 }
@@ -668,4 +683,31 @@ margin-right: 8px;
   .nav-links.open {
     display: flex;
   }
+}
+
+.diagnosis-result {
+    background-color: #f0f9ff;
+    border: 1px solid #b0dce8;
+    border-radius: 8px;
+    padding: 24px;
+    margin-top: 24px;
+}
+
+.diagnosis-result h2 {
+    margin-top: 0;
+    color: #0096b7;
+}
+
+fieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+legend {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1a1a2e;
+    margin-bottom: 4px;
+    padding: 0;
 }

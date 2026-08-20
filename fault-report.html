@@ -47,17 +47,17 @@
       <p>Fill in the details below. The AI will analyse your report and suggest a diagnosis.</p>
      </div>
 
-    <form action="#" method="post" enctype="multipart/form-data">
+    <form id="fault-form" action="#" method="post" enctype="multipart/form-data">
 
       <div class="form-grid">
 
         <div class="form-group">
-          <label for="tech-name">Technician name</label>
+          <label for="technician-name">Technician name</label>
           <input type="text" id="technician-name" name="technician-name" placeholder="Enter your full name" required>
         </div>
 
         <div class="form-group">
-          <label for="tech-id">Technician ID</label>
+          <label for="technician-id">Technician ID</label>
           <input type="text" id="technician-id" name="technician-id" placeholder="e.g. TECH-0042" required>
         </div>
 
@@ -107,37 +107,42 @@
       </div>
 
       <div class="form-group">
-        <label for="fault-photo">Upload fault photo</label>
+        <span class="field-label">Upload fault photo</span>
         <div class="file-upload-box">
-          <input type="file" id="fault-photo" name="fault-photo" accept="image/*" style="display:none;">
+          <input type="file" id="fault-photo" name="fault-photo" accept="image/*">
           <label for="fault-photo" class="file-upload-label">Choose a photo</label>
         <span class="file-name-display" id="file-name">No photo selected</span>
         </div>
       </div>
 
-      <div class="form-group">
-        <label for="sudden">How did the fault occur?</label>
+      <fieldset class="form-group">
+        <legend>How did the fault occur?</legend>
         <div class="radio-group">
           <input type="radio" id="sudden" name="fault-onset" value="sudden">
-          <label for="sudden" style="display:inline; font-weight:400;">Sudden failure</label>
+          <label for="sudden">Sudden failure</label>
         </div>
         <div class="radio-group">
           <input type="radio" id="gradual" name="fault-onset" value="gradual">
-          <label for="gradual" style="display:inline; font-weight:400;">Gradual degradation</label>
+          <label for="gradual">Gradual degradation</label>
         </div>
         <div class="radio-group">
           <input type="radio" id="external" name="fault-onset" value="external">
-          <label for="external" style="display:inline; font-weight:400;">External damage</label>
+          <label for="external">External damage</label>
         </div>
         <div class="radio-group">
           <input type="radio" id="unknown" name="fault-onset" value="unknown">
-          <label for="unknown" style="display:inline; font-weight:400;">Unknown cause</label>
+          <label for="unknown">Unknown cause</label>
         </div>
-      </div>
+      </fieldset>
 
       <button type="submit">Submit fault report</button>
 
     </form>
+
+      <div id="diagnosis-result" class="diagnosis-result" hidden>
+        <h2>Diagnosis</h2>
+        <p id="diagnosis-text"></p>
+      </div>
 
     </div>
 

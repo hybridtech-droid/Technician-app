@@ -28,5 +28,25 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   }
+  
+  let resultBox = document.getElementById('diagnosis-result');
+  let resultText = document.getElementById('diagnosis');
+
+  let faultForm = document.getElementById('fault-form');
+
+  if (faultForm) {
+    faultForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      let data = new FormData(faultForm);
+
+      resultBox.hidden = false;
+      resultText.textContent = 'Analysing report...';
+      console.log('--- fault report submitted ---');
+      data.forEach(function (value, key) {
+        console.log(key, '=', value);
+      });
+    });
+  }
 });
 
