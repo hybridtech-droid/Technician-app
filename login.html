@@ -46,20 +46,16 @@
       </p>
       <form>
 
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" required>
-
         <label for="email">Email address</label>
-        <input type="email" id="email" 
+        <input type="email" id="email" name="email" autocomplete="username"
                placeholder="Enter your email address" required>
 
         <label for="password">Password</label>
-        <input type="password" id="password"
+        <input type="password" id="password" name="password" autocomplete="current-password"
                placeholder="Enter your password" required>
 
-
         <label>
-          <input type="checkbox" id="remember-me">
+          <input type="checkbox" id="remember-me" name="remember-me" value="yes">
           Remember me on this device
         </label>
 
@@ -68,7 +64,7 @@
     </form>
    </div>
 
-    <p>Forget your password?
+    <p>Forgot your password?
         <a href="reset-password.html">Reset password</a>
     </p>
 
