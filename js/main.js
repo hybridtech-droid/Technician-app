@@ -155,6 +155,21 @@ document.addEventListener('DOMContentLoaded', function () {
   if (faultForm) {
     faultForm.addEventListener('submit', function (e) {
       e.preventDefault();
+        let descriptionField = document.getElementById('fault-description');
+      let descriptionError = document.getElementById('description-error');
+      let description = descriptionField.value.trim();
+
+      if (description.length < 20) {
+        descriptionError.textContent =
+          'Please describe the fault in more detail — at least 20 characters. Include sounds, smells, error codes, or what happened before it failed.';
+        descriptionError.hidden = false;
+        descriptionField.classList.add('input-invalid');
+        descriptionField.focus();
+        return;
+      }
+
+      descriptionError.hidden = true;
+      descriptionField.classList.remove('input-invalid');
 
       let data = new FormData(faultForm);
 

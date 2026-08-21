@@ -711,3 +711,14 @@ legend {
     margin-bottom: 4px;
     padding: 0;
 }
+
+.field-error {
+  display: block;
+  color: #c0392b;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.input-invalid {
+  border-color: #c0392b;
+}
