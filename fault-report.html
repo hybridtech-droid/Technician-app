@@ -43,21 +43,31 @@
     <div class="page-card">
 
      <div class="page-card-header">
-      <h1>Submit a fault report</h1>
-      <p>Fill in the details below. The AI will analyse your report and suggest a diagnosis.</p>
+      <h1 id="page-title">Submit a fault report</h1>
+      <p id="page-subtitle">Fill in the details below. The AI will analyse your report and suggest a diagnosis.</p>
      </div>
 
     <form id="fault-form" action="#" method="post" enctype="multipart/form-data">
 
+            <div class="form-group">
+        <label for="request-type">Request type</label>
+        <select id="request-type" name="request-type" required>
+          <option value="fault">Fault diagnosis</option>
+          <option value="installation">Installation and commissioning</option>
+          <option value="after-sales">After-sales support</option>
+          <option value="application">Application and process support</option>
+        </select>
+      </div>
+
       <div class="form-grid">
 
         <div class="form-group">
-          <label for="technician-name">Technician name</label>
+          <label for="technician-name">Your name</label>
           <input type="text" id="technician-name" name="technician-name" placeholder="Enter your full name" required>
         </div>
 
         <div class="form-group">
-          <label for="technician-id">Technician ID</label>
+          <label for="technician-id">Your ID</label>
           <input type="text" id="technician-id" name="technician-id" placeholder="e.g. TECH-0042" required>
         </div>
 
@@ -71,7 +81,7 @@
           <input type="text" id="site-location" name="site-location" placeholder="e.g. Lagos — Apapa terminal" required>
         </div>
 
-        <div class="form-group">
+        <div class="form-group fault-only" id="group-fault-type">
           <label for="fault-type">Fault type</label>
           <select id="fault-type" name="fault-type" required>
             <option value="">-- Select fault type --</option>
@@ -86,7 +96,7 @@
           </select>
         </div>
 
-        <div class="form-group">
+        <div class="form-group fault-only" id="group-fault-severity">
           <label for="fault-severity">Fault severity</label>
           <select id="fault-severity" name="fault-severity" required>
             <option value="">-- Select severity --</option>
@@ -100,7 +110,7 @@
       </div>
 
       <div class="form-group">
-        <label for="fault-description">Fault description</label>
+        <label for="fault-description" id="description-label">Fault description</label>
         <textarea id="fault-description" name="fault-description" rows="5"
           placeholder="Describe exactly what you observed — sounds, smells, error codes, what happened before the fault..."
           required></textarea>
@@ -108,7 +118,7 @@
       </div>
 
       <div class="form-group">
-        <span class="field-label">Upload fault photo</span>
+        <span class="field-label">Upload photo</span>
         <div class="file-upload-box">
           <input type="file" id="fault-photo" name="fault-photo" accept="image/*">
           <label for="fault-photo" class="file-upload-label">Choose a photo</label>
@@ -116,7 +126,7 @@
         </div>
       </div>
 
-      <fieldset class="form-group">
+      <fieldset class="form-group fault-only" id="group-fault-onset">
         <legend>How did the fault occur?</legend>
         <div class="radio-group">
           <input type="radio" id="sudden" name="fault-onset" value="sudden">
@@ -136,12 +146,12 @@
         </div>
       </fieldset>
 
-      <button type="submit">Submit fault report</button>
+      <button type="submit" id="submit-button">Submit fault report</button>
 
     </form>
 
       <div id="diagnosis-result" class="diagnosis-result" hidden>
-        <h2>Diagnosis</h2>
+        <h2 id="result-title">Diagnosis</h2>
         <p id="diagnosis-text"></p>
       </div>
 

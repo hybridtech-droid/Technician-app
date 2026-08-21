@@ -1,10 +1,11 @@
 let currentFaultId = null;
 
-async function getDiagnosis(faultType, severity, onset, description, equipment, location) {
+async function getDiagnosis(requestType, faultType, severity, onset, description, equipment, location) {
   const response = await fetch('/api/diagnose', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
+      requestType: requestType,
       faultType: faultType,
       severity: severity,
       onset: onset,
@@ -61,7 +62,11 @@ function prettyLabel(value) {
     critical: 'Critical',
     high: 'High',
     medium: 'Medium',
-    low: 'Low'
+    low: 'Low',
+    fault: 'Fault',
+    installation: 'Installation',
+    'after-sales': 'After-sales',
+    application: 'Application'
   };
   return labels[value] || value;
 }
@@ -92,6 +97,79 @@ function showFaultDetail(fault) {
 
   panel.hidden = false;
   panel.scrollIntoView({ behavior: 'smooth' });
+}
+
+function applyRequestType(type) {
+  let faultGroups = document.querySelectorAll('.fault-only');
+  let showFaultFields = type === 'fault';
+
+  faultGroups.forEach(function (group) {
+    group.hidden = !showFaultFields;
+
+    let inputs = group.querySelectorAll('input, select, textarea');
+    inputs.forEach(function (input) {
+      input.required = showFaultFields && input.id !== 'fault-onset';
+    });
+  });
+
+  let descriptionLabel = document.getElementById('description-label');
+  let labels = {
+    fault: 'Fault description',
+    installation: 'Installation notes',
+    'after-sales': 'Issue description',
+    application: 'Application or process concern'
+  };
+
+  if (descriptionLabel) {
+    descriptionLabel.textContent = labels[type] || 'Description';
+  }
+
+    let wording = {
+    fault: {
+      title: 'Submit a fault report',
+      subtitle: 'Fill in the details below. The AI will analyse your report and suggest a diagnosis.',
+      button: 'Submit fault report',
+      result: 'Diagnosis'
+    },
+    installation: {
+      title: 'Installation and commissioning',
+      subtitle: 'Record the installation and get AI guidance on setup, checks and handover.',
+      button: 'Submit installation report',
+      result: 'Installation guidance'
+    },
+    'after-sales': {
+      title: 'After-sales support',
+      subtitle: 'Describe the issue since installation and get AI guidance on next steps.',
+      button: 'Submit support request',
+      result: 'Support guidance'
+    },
+    application: {
+      title: 'Application and process support',
+      subtitle: 'Describe the application or process concern and get AI assessment and recommendations.',
+      button: 'Submit application request',
+      result: 'Assessment and recommendations'
+    }
+  };
+
+  let text = wording[type] || wording.fault;
+
+  let pageTitle = document.getElementById('page-title');
+  let pageSubtitle = document.getElementById('page-subtitle');
+  let submitButton = document.getElementById('submit-button');
+  let resultTitle = document.getElementById('result-title');
+
+  if (pageTitle) {
+    pageTitle.textContent = text.title;
+  }
+  if (pageSubtitle) {
+    pageSubtitle.textContent = text.subtitle;
+  }
+  if (submitButton) {
+    submitButton.textContent = text.button;
+  }
+  if (resultTitle) {
+    resultTitle.textContent = text.result;
+  }
 }
 
 function renderFaultLog() {
@@ -144,8 +222,8 @@ function renderFaultLog() {
       fault.technician,
       fault.equipment,
       fault.location,
-      prettyLabel(fault.type),
-      prettyLabel(fault.severity),
+      prettyLabel(fault.requestType || 'fault'),
+      fault.severity ? prettyLabel(fault.severity) : '—',
       fault.date,
       fault.status
     ];
@@ -221,6 +299,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
       try {
         let diagnosis = await getDiagnosis(
+          data.get('request-type'),
           data.get('fault-type'),
           data.get('fault-severity'),
           data.get('fault-onset'),
@@ -236,6 +315,7 @@ document.addEventListener('DOMContentLoaded', function () {
           technician: data.get('technician-name'),
           equipment: data.get('equipment-id'),
           location: data.get('site-location'),
+          requestType: data.get('request-type'),
           type: data.get('fault-type'),
           severity: data.get('fault-severity'),
           date: new Date().toLocaleDateString('en-GB'),
@@ -267,6 +347,14 @@ document.addEventListener('DOMContentLoaded', function () {
     detailClose.addEventListener('click', function () {
       document.getElementById('fault-detail').hidden = true;
     });
+  }
+    let requestType = document.getElementById('request-type');
+
+  if (requestType) {
+    requestType.addEventListener('change', function () {
+      applyRequestType(requestType.value);
+    });
+    applyRequestType(requestType.value);
   }
   renderFaultLog();
 });
