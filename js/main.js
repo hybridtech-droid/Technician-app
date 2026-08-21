@@ -1,30 +1,25 @@
-function getDiagnosis(faultType, severity, onset) {
-  let suggestions = {
-    electrical: 'Check supply voltage, breaker condition, and terminal tightness. Inspect cabling for insulation damage or heat discolouration.',
-    mechanical: 'Inspect bearings, couplings, and alignment. Check lubrication levels and listen for changes in running noise under load.',
-    electronic: 'Verify sensor output against a known reference. Check signal wiring for continuity and inspect boards for damaged components.',
-    hvac: 'Check refrigerant pressures, filter condition, and airflow. Inspect the condenser coil for fouling.',
-    software: 'Review controller logs around the fault time. Confirm firmware version and check for corrupted configuration.',
-    structural: 'Inspect mounting points, welds, and fasteners for cracking or movement. Check foundation for settling.',
-    biomedical: 'Run the manufacturer self-test and check calibration records. Verify power supply stability.',
-    other: 'Insufficient category data. Escalate to a senior engineer with full observation notes.'
-  };
+let currentFaultId = null;
 
-  let text = suggestions[faultType] || suggestions.other;
-  
-  if (onset === 'sudden') {
-    text = text + ' Sudden onset points to a discrete trigger - check for a recent power event, impact, or overload before assuming wear.';
-  } else if (onset === 'gradual') {
-    text = text + ' Gradual onset suggests wear or contamination - review maintenance history and trend any available readings.';
-  } else if (onset === 'external') {
-    text = text +' External damage was reported - document it photographically before any repair, as it may affect warranty or insurance.';
+async function getDiagnosis(faultType, severity, onset, description, equipment, location) {
+  const response = await fetch('/api/diagnose', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      faultType: faultType,
+      severity: severity,
+      onset: onset,
+      description: description,
+      equipment: equipment,
+      location: location
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('Diagnosis request failed');
   }
 
-  if (severity === 'critical') {
-    text = 'PRIORITY — isolate the equipment before working on it. ' + text;
-  }
-
-  return text;
+  const data = await response.json();
+  return data.diagnosis;
 }
 
 function loadFaults() {
@@ -38,6 +33,18 @@ function loadFaults() {
 function saveFault(fault) {
   let faults = loadFaults();
   faults.push(fault);
+  localStorage.setItem('faults', JSON.stringify(faults));
+}
+
+function updateFaultStatus(id, newStatus) {
+  let faults = loadFaults();
+
+  faults.forEach(function (fault) {
+    if (fault.id === id) {
+      fault.status = newStatus;
+    }
+  });
+
   localStorage.setItem('faults', JSON.stringify(faults));
 }
 
@@ -57,6 +64,34 @@ function prettyLabel(value) {
     low: 'Low'
   };
   return labels[value] || value;
+}
+
+function showFaultDetail(fault) {
+  let panel = document.getElementById('fault-detail');
+
+  if (!panel) {
+    return;
+  }
+    currentFaultId = fault.id;
+
+  document.getElementById('detail-title').textContent =
+    fault.id + ' — ' + fault.equipment;
+
+  document.getElementById('detail-meta').textContent =
+    prettyLabel(fault.type) + ' · ' + prettyLabel(fault.severity) +
+    ' · ' + fault.location + ' · reported ' + fault.date +
+    ' by ' + fault.technician;
+
+  document.getElementById('detail-description').textContent =
+    fault.description || 'No description recorded for this report.';
+
+  document.getElementById('detail-diagnosis').textContent =
+    fault.diagnosis || 'No diagnosis recorded.';
+
+  document.getElementById('detail-status').value = fault.status;
+
+  panel.hidden = false;
+  panel.scrollIntoView({ behavior: 'smooth' });
 }
 
 function renderFaultLog() {
@@ -92,6 +127,8 @@ function renderFaultLog() {
   progressEl.textContent = progress;
   resolvedEl.textContent = resolved;
 
+   tbody.innerHTML = '';
+
   if (faults.length === 0) {
     emptyMessage.hidden = false;
     return;
@@ -118,7 +155,12 @@ function renderFaultLog() {
       cell.textContent = value;
       row.appendChild(cell);
     });
-
+  
+    row.classList.add('clickable-row');
+    row.addEventListener('click', function () {
+      showFaultDetail(fault);
+    });
+    
     tbody.appendChild(row);
   });
 }
@@ -153,7 +195,7 @@ document.addEventListener('DOMContentLoaded', function () {
   let faultForm = document.getElementById('fault-form');
 
   if (faultForm) {
-    faultForm.addEventListener('submit', function (e) {
+    faultForm.addEventListener('submit', async function (e) {
       e.preventDefault();
         let descriptionField = document.getElementById('fault-description');
       let descriptionError = document.getElementById('description-error');
@@ -171,40 +213,61 @@ document.addEventListener('DOMContentLoaded', function () {
       descriptionError.hidden = true;
       descriptionField.classList.remove('input-invalid');
 
-      let data = new FormData(faultForm);
+           let data = new FormData(faultForm);
 
-      let diagnosis = getDiagnosis(
-        data.get('fault-type'),
-        data.get('fault-severity'),
-        data.get('fault-onset')
-      );
-
-      let fault = {
-        id: 'F-' + String(loadFaults().length + 1).padStart(3, '0'),
-        technician: data.get('technician-name'),
-        equipment: data.get('equipment-id'),
-        location: data.get('site-location'),
-        type: data.get('fault-type'),
-        severity: data.get('fault-severity'),
-        date: new Date().toLocaleDateString('en-GB'),
-        status: 'Open',
-        diagnosis: diagnosis
-      };
-
-      saveFault(fault);
-      faultForm.reset();
-      fileNameDisplay.textContent = 'No photo selected';
-      
       resultBox.hidden = false;
       resultText.textContent = 'Analysing report...';
       resultBox.scrollIntoView({ behavior: 'smooth' });
 
-      setTimeout(function () {
+      try {
+        let diagnosis = await getDiagnosis(
+          data.get('fault-type'),
+          data.get('fault-severity'),
+          data.get('fault-onset'),
+          description,
+          data.get('equipment-id'),
+          data.get('site-location')
+        );
+
         resultText.textContent = diagnosis;
-      }, 1200);
+
+        let fault = {
+          id: 'F-' + String(loadFaults().length + 1).padStart(3, '0'),
+          technician: data.get('technician-name'),
+          equipment: data.get('equipment-id'),
+          location: data.get('site-location'),
+          type: data.get('fault-type'),
+          severity: data.get('fault-severity'),
+          date: new Date().toLocaleDateString('en-GB'),
+          status: 'Open',
+          description: description,
+          diagnosis: diagnosis
+        };
+
+        saveFault(fault);
+        faultForm.reset();
+        fileNameDisplay.textContent = 'No photo selected';
+        } catch (err) {
+        resultText.textContent =
+          'Could not reach the diagnosis service. Check your connection and try again.';
+      }
+    });
+  }
+  let detailStatus = document.getElementById('detail-status');
+  let detailClose = document.getElementById('detail-close');
+
+  if (detailStatus) {
+    detailStatus.addEventListener('change', function () {
+      updateFaultStatus(currentFaultId, detailStatus.value);
+      renderFaultLog();
     });
   }
 
+  if (detailClose) {
+    detailClose.addEventListener('click', function () {
+      document.getElementById('fault-detail').hidden = true;
+    });
+  }
   renderFaultLog();
 });
 

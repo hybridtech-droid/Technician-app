@@ -70,6 +70,27 @@
     
     <p id="no-faults" class="no-faults">No faults have been reported yet.</p>
 
+    <div id="fault-detail" class="fault-detail" hidden>
+      <h2 id="detail-title">Fault detail</h2>
+
+      <p class="detail-meta" id="detail-meta"></p>
+
+      <h3>Reported observations</h3>
+      <p id="detail-description"></p>
+
+      <h3>AI diagnosis</h3>
+      <p id="detail-diagnosis"></p>
+
+      <label for="detail-status">Status</label>
+      <select id="detail-status">
+        <option value="Open">Open</option>
+        <option value="In progress">In progress</option>
+        <option value="Resolved">Resolved</option>
+      </select>
+
+      <button type="button" id="detail-close" class="btn-secondary">Close</button>
+    </div>
+
   </main>
 
     <footer>

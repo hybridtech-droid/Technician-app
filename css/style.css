@@ -722,3 +722,43 @@ legend {
 .input-invalid {
   border-color: #c0392b;
 }
+
+.fault-detail {
+  background-color: #ffffff;
+  border: 1px solid #b0dce8;
+  border-radius: 10px;
+  padding: 28px;
+  margin-top: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.fault-detail h2 {
+  margin-top: 0;
+  color: #0096b7;
+}
+
+.fault-detail h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 20px;
+  margin-bottom: 6px;
+  color: #1a1a2e;
+}
+
+.detail-meta {
+  font-size: 13px;
+  color: #666666;
+  margin-bottom: 16px;
+}
+
+.fault-detail select {
+  max-width: 240px;
+}
+
+.fault-detail button {
+  margin-top: 20px;
+}
+
+.clickable-row {
+  cursor: pointer;
+}

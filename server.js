@@ -36,6 +36,7 @@ app.post('/api/diagnose', async function (req, res) {
     'Onset: ' + onset + '\n' +
     'Observed: ' + description + '\n\n' +
     'Respond with likely causes and the checks to run, in order. Keep it under 200 words. ' +
+    'Write in plain prose with no Markdown formatting — no asterisks, hashes, or bullet symbols. ' +
     'Note any safety precautions first if the severity warrants it.';
 
   try {
