@@ -148,6 +148,31 @@
           </select>
         </div>
 
+                <div class="form-group application-only" id="group-impact" hidden>
+          <label for="application-impact">What is being affected?</label>
+          <select id="application-impact" name="application-impact">
+            <option value="">-- Select impact --</option>
+            <option value="output-quality">Output or result quality</option>
+            <option value="throughput">Throughput or speed</option>
+            <option value="contamination">Contamination or carryover</option>
+            <option value="calibration-drift">Calibration or accuracy drift</option>
+            <option value="user-technique">User technique or workflow</option>
+            <option value="consumables">Consumables or reagents</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group application-only" id="group-recurring" hidden>
+          <label for="recurring">Is this recurring?</label>
+          <select id="recurring" name="recurring">
+            <option value="">-- Select --</option>
+            <option value="first-time">First time observed</option>
+            <option value="intermittent">Intermittent</option>
+            <option value="consistent">Happens consistently</option>
+            <option value="worsening">Getting worse over time</option>
+          </select>
+        </div>
+
       </div>
 
       <div class="form-group">

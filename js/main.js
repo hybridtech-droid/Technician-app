@@ -1,18 +1,10 @@
 let currentFaultId = null;
 
-async function getDiagnosis(requestType, faultType, severity, onset, description, equipment, location) {
+async function getDiagnosis(payload) {
   const response = await fetch('/api/diagnose', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      requestType: requestType,
-      faultType: faultType,
-      severity: severity,
-      onset: onset,
-      description: description,
-      equipment: equipment,
-      location: location
-    })
+    body: JSON.stringify(payload)
   });
 
   if (!response.ok) {
@@ -100,15 +92,28 @@ function showFaultDetail(fault) {
 }
 
 function applyRequestType(type) {
-  let faultGroups = document.querySelectorAll('.fault-only');
-  let showFaultFields = type === 'fault';
+    let groupClasses = {
+    fault: 'fault-only',
+    installation: 'install-only',
+    'after-sales': 'aftersales-only',
+    application: 'application-only'
+  };
 
-  faultGroups.forEach(function (group) {
-    group.hidden = !showFaultFields;
+  Object.keys(groupClasses).forEach(function (key) {
+    let show = key === type;
+    let groups = document.querySelectorAll('.' + groupClasses[key]);
 
-    let inputs = group.querySelectorAll('input, select, textarea');
-    inputs.forEach(function (input) {
-      input.required = showFaultFields && input.id !== 'fault-onset';
+    groups.forEach(function (group) {
+      group.hidden = !show;
+
+      let inputs = group.querySelectorAll('input, select, textarea');
+      inputs.forEach(function (input) {
+        if (input.type === 'radio') {
+          input.required = false;
+        } else {
+          input.required = show;
+        }
+      });
     });
   });
 
@@ -298,15 +303,21 @@ document.addEventListener('DOMContentLoaded', function () {
       resultBox.scrollIntoView({ behavior: 'smooth' });
 
       try {
-        let diagnosis = await getDiagnosis(
-          data.get('request-type'),
-          data.get('fault-type'),
-          data.get('fault-severity'),
-          data.get('fault-onset'),
-          description,
-          data.get('equipment-id'),
-          data.get('site-location')
-        );
+        let diagnosis = await getDiagnosis({
+          requestType: data.get('request-type'),
+          equipment: data.get('equipment-id'),
+          location: data.get('site-location'),
+          description: description,
+          faultType: data.get('fault-type'),
+          severity: data.get('fault-severity'),
+          onset: data.get('fault-onset'),
+          installStage: data.get('install-stage'),
+          equipmentModel: data.get('equipment-model'),
+          timeSinceInstall: data.get('time-since-install'),
+          warrantyStatus: data.get('warranty-status'),
+          applicationImpact: data.get('application-impact'),
+          recurring: data.get('recurring')
+        });
 
         resultText.textContent = diagnosis;
 

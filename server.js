@@ -21,7 +21,21 @@ app.get('/api/health', function (req, res) {
 });
 
 app.post('/api/diagnose', async function (req, res) {
-  const { requestType, faultType, severity, onset, description, equipment, location } = req.body;
+    const {
+    requestType,
+    faultType,
+    severity,
+    onset,
+    description,
+    equipment,
+    location,
+    installStage,
+    equipmentModel,
+    timeSinceInstall,
+    warrantyStatus,
+    applicationImpact,
+    recurring
+  } = req.body;
 
   if (!description || description.trim().length < 20) {
     return res.status(400).json({ error: 'Description too short.' });
@@ -41,11 +55,28 @@ app.post('/api/diagnose', async function (req, res) {
     'Location: ' + location + '\n';
 
   if (requestType === 'fault') {
-    context =
-      context +
+    context = context +
       'Fault category: ' + faultType + '\n' +
       'Severity: ' + severity + '\n' +
       'Onset: ' + onset + '\n';
+  }
+
+  if (requestType ==='installation') {
+    context = context +
+      'Installation stage: ' + installStage + '\n' +
+      'Make and model: ' + equipmentModel + '\n';
+  }
+
+  if (requestType === 'after-sales') {
+    context = context +
+      'Time since installation: ' + timeSinceInstall + '\n' +
+      'Warranty status: ' + warrantyStatus + '\n';
+  }
+
+  if (requestType === 'application') {
+    context = context +
+      'Affected area: ' + applicationImpact + '\n' +
+      'Recurrence: ' + recurring + '\n';
   }
 
   const prompt =
