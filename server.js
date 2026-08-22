@@ -100,6 +100,34 @@ app.post('/api/diagnose', async function (req, res) {
   }
 });
 
+app.post('/api/chat', async function (req, res) {
+  const { messages } = req.body;
+
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return res.status(400).json({ error: 'No messages provided.' });
+  }
+
+  const systemPrompt =
+    'You are iTechAssist, assisting field service engineers, technicians and application specialists ' +
+    'across engineering and non-engineering fields. Answer practically and concisely. ' +
+    'Ask a clarifying question if the request is ambiguous. Note safety precautions where they apply. ' +
+    'Write in plain prose with no Markdown formatting. Keep answers under 250 words unless more detail is clearly needed.';
+
+  try {
+    const reply = await anthropic.messages.create({
+      model: 'claude-sonnet-4-5',
+      max_tokens: 700,
+      system: systemPrompt,
+      messages: messages
+    });
+
+    res.json({ reply: reply.content[0].text });
+  } catch (err) {
+    console.error('Chat error:', err.message);
+    res.status(500).json({ error: 'Chat service unavailable.' });
+  }
+});
+
 app.listen(PORT, function () {
   console.log('iTechAssist server running at http://localhost:' + PORT);
 }); 

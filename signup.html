@@ -46,13 +46,13 @@
     <form id="signup-form">
 
        <label for="full-name">Full name:</label>
-       <input type="text" id="full-name"
+       <input type="text" id="full-name" name="full-name"
                placeholder="Enter your full name"
                autocomplete="name"
                required>
 
        <label for="phone">Phone number</label>
-       <input type="tel" id="phone"
+       <input type="tel" id="phone" name="phone"
                placeholder="Enter your phone number"
                autocomplete="tel"
                required>
@@ -69,39 +69,39 @@
        </select>
 
        <label for="email">Email</label>
-       <input type="email" id="email"
+       <input type="email" id="email" name="email"
                placeholder="Enter your email address"
                autocomplete="email"
                required>
 
         <label for="company">Company or organisation or self-employed</label>
-        <input type="text" id="company"
+        <input type="text" id="company" name="company"
                placeholder="Enter your company or organisation name or self-employed status"
                autocomplete="organization"
                required>
 
         <label for="password">Create password</label>
-        <input type="password" id="password"
+        <input type="password" id="password" name="password"
                placeholder="Minimum 8 characters, include letters and numbers"
                autocomplete="new-password"
                required>
 
         <label for="confirm-password">Confirm password</label>
-        <input type="password" id="confirm-password"
+        <input type="password" id="confirm-password" name="confirm-password"
                placeholder="Re-enter your password"
                autocomplete="new-password"
                required>
 
         <label class="form-legal">
-            <input type="checkbox" id="terms" required>
+            <input type="checkbox" id="terms" name="terms" required>
             <span>I have read and agree to the <a href="terms.html" target="_blank" class="legal-highlight">Terms and Conditions</a> and 
                 <a href="privacy.html" target="_blank" class="legal-highlight">Privacy Policy</a>.
             </span>
         </label>
 
         <label class="form-legal">
-            <input type="checkbox" id="disclaimer" required>
-            <span>I understad that AI-generated fault diagnoses are suggestions only and must be verified by a qualified engineer before any action is taken.
+            <input type="checkbox" id="disclaimer" name="disclaimer" required>
+            <span>I understand that AI-generated diagnoses and recommendation are suggestions only and must be verified by a qualified engineer or specialist before any action is taken.</span>
         </label>
 
         <button type="submit">Create account</button>

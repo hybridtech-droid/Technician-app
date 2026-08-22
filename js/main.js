@@ -1,4 +1,5 @@
 let currentFaultId = null;
+let chatMessages = [];
 
 async function getDiagnosis(payload) {
   const response = await fetch('/api/diagnose', {
@@ -13,6 +14,34 @@ async function getDiagnosis(payload) {
 
   const data = await response.json();
   return data.diagnosis;
+}
+
+async function sendChatMessage(messages) {
+  const response = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages: messages })
+  });
+
+  if (!response.ok) {
+    throw new Error('Chat request failed');
+  }
+
+  const data = await response.json();
+  return data.reply;
+}
+
+function addChatBubble(text, role) {
+  let chatWindow = document.getElementById('chat-window');
+  let bubble = document.createElement('div');
+
+  bubble.className = 'chat-message chat-message--' + role;
+  bubble.textContent = text;
+
+  chatWindow.appendChild(bubble);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+
+  return bubble;
 }
 
 function loadFaults() {
@@ -58,7 +87,32 @@ function prettyLabel(value) {
     fault: 'Fault',
     installation: 'Installation',
     'after-sales': 'After-sales',
-    application: 'Application'
+    application: 'Application',
+    'under-1-month': 'Under 1 month',
+    '1-6-months': '1 to 6 months',
+    '6-12-months': '6 to 12 months',
+    '1-3-years': '1 to 3 years',
+    'over-3-years': 'Over 3 years',
+    'under-warranty': 'Under warranty',
+    'service-contract': 'Under service contract',
+    expired: 'Expired',
+    unknown: 'Not known',
+    'pre-site': 'Pre-site survey',
+    delivery: 'Delivery and unpacking',
+    assembly: 'Assembly and positioning',
+    connection: 'Power, water or network connection',
+    calibration: 'Calibration and verification',
+    handover: 'Handover and sign-off',
+    'output-quality': 'Output or result quality',
+    throughput: 'Throughput or speed',
+    contamination: 'Contamination or carryover',
+    'calibration-drift': 'Calibration or accuracy drift',
+    'user-technique': 'User technique or workflow',
+    consumables: 'Consumables or reagents',
+    'first-time': 'First time observed',
+    intermittent: 'Intermittent',
+    consistent: 'Happens consistently',
+    worsening: 'Getting worse over time'
   };
   return labels[value] || value;
 }
@@ -74,10 +128,47 @@ function showFaultDetail(fault) {
   document.getElementById('detail-title').textContent =
     fault.id + ' — ' + fault.equipment;
 
-  document.getElementById('detail-meta').textContent =
-    prettyLabel(fault.type) + ' · ' + prettyLabel(fault.severity) +
-    ' · ' + fault.location + ' · reported ' + fault.date +
-    ' by ' + fault.technician;
+  let metaParts = [];
+
+  metaParts.push(prettyLabel(fault.requestType || 'fault'));
+
+  if (fault.type) {
+    metaParts.push(prettyLabel(fault.type));
+  }
+  if (fault.severity) {
+    metaParts.push(prettyLabel(fault.severity));
+  }
+
+  metaParts.push(fault.location);
+  metaParts.push('reported ' + fault.date);
+  metaParts.push('by ' + fault.technician);
+
+  document.getElementById('detail-meta').textContent = metaParts.join(' · ');
+
+  let extras = [];
+
+  if (fault.equipmentModel) {
+    extras.push('Model: ' + fault.equipmentModel);
+  }
+  if (fault.installStage) {
+    extras.push('Stage: ' + prettyLabel(fault.installStage));
+  }
+  if (fault.timeSinceInstall) {
+    extras.push('Time since install: ' + prettyLabel(fault.timeSinceInstall));
+  }
+  if (fault.warrantyStatus) {
+    extras.push('Warranty: ' + prettyLabel(fault.warrantyStatus));
+  }
+  if (fault.applicationImpact) {
+    extras.push('Affected: ' + prettyLabel(fault.applicationImpact));
+  }
+  if (fault.recurring) {
+    extras.push('Recurrence: ' + prettyLabel(fault.recurring));
+  }
+
+  let extrasEl = document.getElementById('detail-extras');
+  extrasEl.textContent = extras.join('  ·  ');
+  extrasEl.hidden = extras.length === 0;
 
   document.getElementById('detail-description').textContent =
     fault.description || 'No description recorded for this report.';
@@ -374,6 +465,47 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     applyRequestType(requestType.value);
   }
+  
+    let chatForm = document.getElementById('chat-form');
+  let chatInput = document.getElementById('chat-input');
+
+  if (chatForm && chatInput) {
+    chatForm.addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      let question = chatInput.value.trim();
+
+      if (question.length === 0) {
+        return;
+      }
+
+      addChatBubble(question, 'user');
+      chatMessages.push({ role: 'user', content: question });
+
+      chatInput.value = '';
+      chatInput.disabled = true;
+
+      let thinking = addChatBubble('Thinking...', 'thinking');
+
+      try {
+        let reply = await sendChatMessage(chatMessages);
+
+        thinking.remove();
+        addChatBubble(reply, 'assistant');
+        chatMessages.push({ role: 'assistant', content: reply });
+      } catch (err) {
+        thinking.remove();
+        addChatBubble(
+          'Could not reach the assistant. Check your connection and try again.',
+          'assistant'
+        );
+      }
+
+      chatInput.disabled = false;
+      chatInput.focus();
+    });
+  }
+
   renderFaultLog();
 });
 

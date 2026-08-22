@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fault log - iTechAssist</title>
+    <title>Ask iTechAssist</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -39,60 +39,24 @@
   </header>
 
   <main>
+    <div class="page-card">
 
-    <h1>Report log</h1>
-    <p>All submitted reports are listed below - faults, installation, after-sales and application support. Click any row to view and full record</p>
+      <div class="page-card-header">
+        <h1>Ask iTechAssist</h1>
+        <p>Ask a quick question about equipment, installation, after-sales or an application concern. For anything you need on record, submit a report instead.</p>
+      </div>
 
-    <h2>Summary</h2>
-    <p>Total reports: <span id="count-total">0</span></p>
-    <p>Open: <span id="count-open">0</span></p>
-    <p>In progress: <span id="count-progress">0</span></p>
-    <p>Resolved: <span id="count-resolved">0</span></p>
+      <div class="chat-window" id="chat-window">
+        <div class="chat-message chat-message--assistant">Ask me anything about the equipment you are working on. I can help with diagnosis, installation steps, after-sales questions or application and process concerns.</div>
+      </div>
 
-    <div class="table-wrap">  
-    <table>
-        <thead>
-            <tr>
-                <th>Report ID</th>
-                <th>Reported by</th>
-                <th>Equipment ID</th>
-                <th>Location</th>
-                <th>Request type</th>
-                <th>Severity</th>
-                <th>Date</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody id="fault-log-body">   
-        </tbody>
-    </table>
+      <form id="chat-form" class="chat-form">
+        <textarea id="chat-input" name="chat-input" rows="2"
+          placeholder="Type your question..." required></textarea>
+        <button type="submit" id="chat-send">Send</button>
+      </form>
+
     </div>
-    
-    <p id="no-faults" class="no-faults">No faults have been reported yet.</p>
-
-    <div id="fault-detail" class="fault-detail" hidden>
-      <h2 id="detail-title">Fault detail</h2>
-
-      <p class="detail-meta" id="detail-meta"></p>
-
-      <p class="detail-extras" id="detail-extras"></p>
-      
-      <h3>Reported observations</h3>
-      <p id="detail-description"></p>
-
-      <h3>AI diagnosis</h3>
-      <p id="detail-diagnosis"></p>
-
-      <label for="detail-status">Status</label>
-      <select id="detail-status">
-        <option value="Open">Open</option>
-        <option value="In progress">In progress</option>
-        <option value="Resolved">Resolved</option>
-      </select>
-
-      <button type="button" id="detail-close" class="btn-secondary">Close</button>
-    </div>
-
   </main>
 
     <footer>
