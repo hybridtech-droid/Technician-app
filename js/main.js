@@ -36,7 +36,7 @@ function addChatBubble(text, role) {
   let bubble = document.createElement('div');
 
   bubble.className = 'chat-message chat-message--' + role;
-  bubble.textContent = text;
+  bubble.textContent = text.replace(/\*\*/g, '');
 
   chatWindow.appendChild(bubble);
   chatWindow.scrollTop = chatWindow.scrollHeight;
@@ -488,7 +488,8 @@ document.addEventListener('DOMContentLoaded', function () {
       let thinking = addChatBubble('Thinking...', 'thinking');
 
       try {
-        let reply = await sendChatMessage(chatMessages);
+        let recent = chatMessages.slice(-12);
+        let reply = await sendChatMessage(recent);
 
         thinking.remove();
         addChatBubble(reply, 'assistant');
