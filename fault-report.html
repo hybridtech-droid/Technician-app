@@ -107,6 +107,47 @@
           </select>
         </div>
 
+        <div class="form-group install-only" id="group-install-stage" hidden>
+          <label for="install-stage">Installation stage</label>
+          <select id="install-stage" name="install-stage">
+            <option value="">-- Select stage --</option>
+            <option value="pre-site">Pre-site survey</option>
+            <option value="delivery">Delivery and unpacking</option>
+            <option value="assembly">Assembly and positioning</option>
+            <option value="connection">Power, water or network connection</option>
+            <option value="calibration">Calibration and verification</option>
+            <option value="handover">Handover and sign-off</option>
+          </select>
+        </div>
+
+        <div class="form-group install-only" id="group-equipment-model" hidden>
+          <label for="equipment-model">Equipment make and model</label>
+          <input type="text" id="equipment-model" name="equipment-model" placeholder="e.g. Hologic Panther">
+        </div>
+
+        <div class="form-group aftersales-only" id="group-time-since" hidden>
+          <label for="time-since-install">Time since installation</label>
+          <select id="time-since-install" name="time-since-install">
+            <option value="">-- Select period --</option>
+            <option value="under-1-month">Under 1 month</option>
+            <option value="1-6-months">1 to 6 months</option>
+            <option value="6-12-months">6 to 12 months</option>
+            <option value="1-3-years">1 to 3 years</option>
+            <option value="over-3-years">Over 3 years</option>
+          </select>
+        </div>
+
+        <div class="form-group aftersales-only" id="group-warranty" hidden>
+          <label for="warranty-status">Warranty or contract status</label>
+          <select id="warranty-status" name="warranty-status">
+            <option value="">-- Select status --</option>
+            <option value="under-warranty">Under warranty</option>
+            <option value="service-contract">Under service contract</option>
+            <option value="expired">Expired</option>
+            <option value="unknown">Not known</option>
+          </select>
+        </div>
+
       </div>
 
       <div class="form-group">
