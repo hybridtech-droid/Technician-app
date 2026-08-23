@@ -1,6 +1,47 @@
 let currentFaultId = null;
 let chatMessages = [];
 
+function readPhotoAsBase64(file) {
+  return new Promise(function (resolve, reject) {
+    let reader = new FileReader();
+
+    reader.onload = function () {
+      let img = new Image();
+
+      img.onload = function () {
+        let maxSide = 1200;
+        let scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+
+        let canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+
+        let ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        let dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+
+        resolve({
+          data: dataUrl.split(',')[1],
+          mediaType: 'image/jpeg'
+        });
+      };
+
+      img.onerror = function () {
+        reject(new Error('Could not read the photo.'));
+      };
+
+      img.src = reader.result;
+    };
+
+    reader.onerror = function () {
+      reject(new Error('Could not read the photo.'));
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
 async function getDiagnosis(payload) {
   const response = await fetch('/api/diagnose', {
     method: 'POST',
@@ -389,6 +430,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
            let data = new FormData(faultForm);
 
+           let photo = null;
+           let photoField = document.getElementById('fault-photo');
+
+           if (photoField && photoField.files.length > 0) {
+             try {
+               photo = await readPhotoAsBase64(photoField.files[0]);
+             } catch (err) {
+               console.error('Photo read failed:', err);
+               photo = null;
+             }
+           }
+
       resultBox.hidden = false;
       resultText.textContent = 'Analysing report...';
       resultBox.scrollIntoView({ behavior: 'smooth' });
@@ -407,7 +460,8 @@ document.addEventListener('DOMContentLoaded', function () {
           timeSinceInstall: data.get('time-since-install'),
           warrantyStatus: data.get('warranty-status'),
           applicationImpact: data.get('application-impact'),
-          recurring: data.get('recurring')
+          recurring: data.get('recurring'),
+          photo: photo
         });
 
         resultText.textContent = diagnosis;

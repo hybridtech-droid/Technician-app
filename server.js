@@ -12,7 +12,7 @@ const anthropic = new Anthropic({
 const app = express();
 const PORT = 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb'}));
 app.use(express.static('.'));
 
 app.get('/api/health', function (req, res) {
@@ -34,7 +34,8 @@ app.post('/api/diagnose', async function (req, res) {
     timeSinceInstall,
     warrantyStatus,
     applicationImpact,
-    recurring
+    recurring,
+    photo
   } = req.body;
 
   if (!description || description.trim().length < 20) {
@@ -49,6 +50,10 @@ app.post('/api/diagnose', async function (req, res) {
   };
 
   const brief = briefs[requestType] || briefs.fault;
+
+  const photoNote = photo && photo.data
+    ? '\n\nA photo of the equipment is attached. Describe what you can see in it that is relevant, and use it in your assessment.'
+    : '';
 
   let context =
     'Equipment: ' + equipment + '\n' +
@@ -84,13 +89,28 @@ app.post('/api/diagnose', async function (req, res) {
     context +
     'Reported: ' + description + '\n\n' +
     'Keep it under 200 words. Write in plain prose with no Markdown formatting — no asterisks, hashes, or bullet symbols. ' +
-    'Note any safety precautions first if they apply.';
+    'Note any safety precautions first if they apply.' + photoNote;
 
   try {
+    let content = [];
+
+    if (photo && photo.data) {
+      content.push({
+        type: 'image',
+        source: {
+          type: 'base64',
+          media_type: photo.mediaType,
+          data: photo.data
+        }
+      });
+    }
+
+    content.push({ type: 'text', text: prompt });
+    
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-5',
       max_tokens: 500,
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: content }]
     });
 
     res.json({ diagnosis: message.content[0].text });
