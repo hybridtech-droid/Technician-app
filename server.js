@@ -4,6 +4,7 @@ const express = require('express');
 const path = require('path');
 
 const Anthropic = require('@anthropic-ai/sdk');
+const rateLimit = require('express-rate-limit');
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
@@ -15,12 +16,20 @@ const PORT = 3000;
 app.use(express.json({ limit: '10mb'}));
 app.use(express.static('.'));
 
+const aiLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please wait a while and try again.' }
+});
+
 app.get('/api/health', function (req, res) {
   const hasKey = Boolean(process.env.ANTHROPIC_API_KEY);
   res.json({ ok: true, keyLoaded: hasKey });
 });
 
-app.post('/api/diagnose', async function (req, res) {
+app.post('/api/diagnose', aiLimiter, async function (req, res) {
     const {
     requestType,
     faultType,
@@ -106,7 +115,7 @@ app.post('/api/diagnose', async function (req, res) {
     }
 
     content.push({ type: 'text', text: prompt });
-    
+
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-5',
       max_tokens: 500,
@@ -120,7 +129,7 @@ app.post('/api/diagnose', async function (req, res) {
   }
 });
 
-app.post('/api/chat', async function (req, res) {
+app.post('/api/chat', aiLimiter, async function (req, res) {
   const { messages } = req.body;
 
   if (!Array.isArray(messages) || messages.length === 0) {
