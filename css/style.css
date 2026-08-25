@@ -832,3 +832,8 @@ legend {
   padding: 12px 28px;
   white-space: nowrap;
 }
+
+.fault-detail a.btn-primary {
+  margin-top: 20px;
+  margin-right: 12px;
+}

@@ -99,6 +99,41 @@ function saveFault(fault) {
   localStorage.setItem('faults', JSON.stringify(faults));
 }
 
+function findFaultById(id) {
+  let faults = loadFaults();
+  let match = null;
+
+  faults.forEach(function (fault) {
+    if (fault.id === id) {
+      match = fault;
+    }
+  });
+
+  return match;
+}
+
+function buildReportSummary(fault) {
+  let parts = [];
+
+  parts.push('Report ' + fault.id + ' (' + prettyLabel(fault.requestType || 'fault') + ')');
+  parts.push('Equipment: ' + fault.equipment);
+  parts.push('Location: ' + fault.location);
+
+  if (fault.type) {
+    parts.push('Fault category: ' + prettyLabel(fault.type));
+  }
+  if (fault.severity) {
+    parts.push('Severity: ' + prettyLabel(fault.severity));
+  }
+  if (fault.onset) {
+    parts.push('Onset: ' + prettyLabel(fault.onset));
+  }
+
+  parts.push('Reported: ' + (fault.description || 'No description recorded.'));
+
+  return parts.join('\n');
+}
+
 function updateFaultStatus(id, newStatus) {
   let faults = loadFaults();
 
@@ -218,6 +253,12 @@ function showFaultDetail(fault) {
     fault.diagnosis || 'No diagnosis recorded.';
 
   document.getElementById('detail-status').value = fault.status;
+
+  let chatLink = document.getElementById('detail-chat');
+
+  if (chatLink) {
+    chatLink.href = 'chat.html?report=' + encodeURIComponent(fault.id);
+  }
 
   panel.hidden = false;
   panel.scrollIntoView({ behavior: 'smooth' });
@@ -520,7 +561,34 @@ document.addEventListener('DOMContentLoaded', function () {
     applyRequestType(requestType.value);
   }
   
-    let chatForm = document.getElementById('chat-form');
+  let chatWindow = document.getElementById('chat-window');
+  
+  if (chatWindow) {
+    let params = new URLSearchParams(window.location.search);
+    let reportId = params.get('report');
+
+    if (reportId) {
+      let fault = findFaultById(reportId);
+
+      if (fault) {
+        let summary = buildReportSummary(fault);
+
+        addChatBubble('Continuing from ' + fault.id + '.\n\n' + summary, 'user');
+        chatMessages.push({
+          role: 'user',
+          content: 'I submitted this report:\n\n' + summary
+        });
+
+        addChatBubble(fault.diagnosis || 'No diagnosis recorded.', 'assistant');
+        chatMessages.push({
+          role: 'assistant',
+          content: fault.diagnosis || 'No diagnosis was recorded for this report.'
+        });
+      }
+    }
+  }
+  
+  let chatForm = document.getElementById('chat-form');
   let chatInput = document.getElementById('chat-input');
 
   if (chatForm && chatInput) {
