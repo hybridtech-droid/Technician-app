@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fault log - iTechAssist</title>
+    <link rel="icon" href="data:,">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -84,12 +85,45 @@
       <h3>AI diagnosis</h3>
       <p id="detail-diagnosis"></p>
 
+      <div id="resolution-display" hidden>
+        <h3>How  it was resolved</h3>
+        <p class="detail-extras" id="resolution-meta"></p>
+        <p id="resolution-text"></p>
+      </div>
+      
       <label for="detail-status">Status</label>
       <select id="detail-status">
         <option value="Open">Open</option>
         <option value="In progress">In progress</option>
         <option value="Resolved">Resolved</option>
       </select>
+
+      <div id="resolution-fields" hidden>
+
+        <label for="root-cause">Root cause</label>
+        <select id="root-cause">
+          <option value="">-- Select root cause --</option>
+          <option value="component-failure">Component failure</option>
+          <option value="wear">Normal wear</option>
+          <option value="installation-error">Installation or setup error</option>
+          <option value="user-error">User or operator error</option>
+          <option value="power-supply">Power supply or environment</option>
+          <option value="contamination">Contamination or fouling</option>
+          <option value="software">Software or configuration</option>
+          <option value="consumable">Consumable or reagent</option>
+          <option value="no-fault-found">No fault found</option>
+          <option value="other">Other</option>
+        </select>
+
+        <label for="resolution-notes">What was done to resolve it</label>
+        <textarea id="resolution-notes" rows="4"
+          placeholder="Describe what you actually found and what fixed it..."></textarea>
+
+        <span class="field-error" id="resolution-error" hidden></span>
+
+        <button type="button" id="save-resolution" class="btn-primary">Save resolution</button>
+
+      </div>
 
       <a href="#" id="detail-chat" class="btn-primary">Continue in chat</a>
       <button type="button" id="detail-close" class="btn-secondary">Close</button>

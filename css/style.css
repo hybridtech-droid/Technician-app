@@ -837,3 +837,7 @@ legend {
   margin-top: 20px;
   margin-right: 12px;
 }
+
+.diagnosis-result a.btn-primary {
+  margin: 20px;
+}

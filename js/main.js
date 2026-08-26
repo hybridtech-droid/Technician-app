@@ -140,6 +140,27 @@ function updateFaultStatus(id, newStatus) {
   faults.forEach(function (fault) {
     if (fault.id === id) {
       fault.status = newStatus;
+
+      if (newStatus !== 'Resolved') {
+        fault.rootCause = '';
+        fault.resolutionNotes = '';
+        fault.resolvedDate = '';
+      }
+    }
+  });
+
+  localStorage.setItem('faults', JSON.stringify(faults));
+}
+
+function saveResolution(id, rootCause, notes) {
+  let faults = loadFaults();
+
+  faults.forEach(function (fault) {
+    if (fault.id === id) {
+      fault.status = 'Resolved';
+      fault.rootCause = rootCause;
+      fault.resolutionNotes = notes;
+      fault.resolvedDate = new Date().toLocaleDateString('en-GB');
     }
   });
 
@@ -253,6 +274,26 @@ function showFaultDetail(fault) {
     fault.diagnosis || 'No diagnosis recorded.';
 
   document.getElementById('detail-status').value = fault.status;
+
+  let resDisplay = document.getElementById('resolution-display');
+
+  if (resDisplay) {
+    if (fault.resolutionNotes) {
+      document.getElementById('resolution-meta').textContent =
+        'Root cause: ' + prettyLabel(fault.rootCause) +
+        '  ·  Resolved ' + fault.resolvedDate;
+      document.getElementById('resolution-text').textContent = fault.resolutionNotes;
+      resDisplay.hidden = false;
+    } else {
+      resDisplay.hidden = true;
+    }
+  }
+
+  let resFields = document.getElementById('resolution-fields');
+
+  if (resFields) {
+    resFields.hidden = true;
+  }
 
   let chatLink = document.getElementById('detail-chat');
 
@@ -447,6 +488,7 @@ document.addEventListener('DOMContentLoaded', function () {
   
   let resultBox = document.getElementById('diagnosis-result');
   let resultText = document.getElementById('diagnosis-text');
+  let resultChat = document.getElementById('result-chat');
 
   let faultForm = document.getElementById('fault-form');
 
@@ -484,6 +526,9 @@ document.addEventListener('DOMContentLoaded', function () {
            }
 
       resultBox.hidden = false;
+      if (resultChat) {
+        resultChat.hidden = true;
+      }
       resultText.textContent = 'Analysing report...';
       resultBox.scrollIntoView({ behavior: 'smooth' });
 
@@ -529,6 +574,10 @@ document.addEventListener('DOMContentLoaded', function () {
         };
 
         saveFault(fault);
+        if (resultChat) {
+          resultChat.href = 'chat.html?report=' + encodeURIComponent(fault.id);
+          resultChat.hidden = false;
+        }
         faultForm.reset();
         fileNameDisplay.textContent = 'No photo selected';
         } catch (err) {
@@ -537,16 +586,72 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   }
+
   let detailStatus = document.getElementById('detail-status');
   let detailClose = document.getElementById('detail-close');
 
+  let resolutionFields = document.getElementById('resolution-fields');
+  let rootCauseField = document.getElementById('root-cause');
+  let resolutionNotes = document.getElementById('resolution-notes');
+  let resolutionError = document.getElementById('resolution-error');
+  let saveResolutionBtn = document.getElementById('save-resolution');
+
   if (detailStatus) {
     detailStatus.addEventListener('change', function () {
+      if (detailStatus.value === 'Resolved') {
+        let existing = findFaultById(currentFaultId);
+
+        if (existing && existing.resolutionNotes) {
+          return;
+        }
+        
+        if (resolutionFields) {
+          resolutionFields.hidden = false;
+        }
+        return;
+      }
+
+      if (resolutionFields) {
+        resolutionFields.hidden = true;
+      }
+
       updateFaultStatus(currentFaultId, detailStatus.value);
       renderFaultLog();
     });
   }
 
+    if (saveResolutionBtn) {
+    saveResolutionBtn.addEventListener('click', function () {
+      let cause = rootCauseField.value;
+      let notes = resolutionNotes.value.trim();
+
+      if (!cause) {
+        resolutionError.textContent = 'Please select a root cause.';
+        resolutionError.hidden = false;
+        return;
+      }
+
+      if (notes.length < 15) {
+        resolutionError.textContent =
+          'Please describe what was done to resolve it — at least 15 characters.';
+        resolutionError.hidden = false;
+        resolutionNotes.focus();
+        return;
+      }
+
+      resolutionError.hidden = true;
+
+      saveResolution(currentFaultId, cause, notes);
+
+      rootCauseField.value = '';
+      resolutionNotes.value = '';
+      resolutionFields.hidden = true;
+
+      document.getElementById('fault-detail').hidden = true;
+      renderFaultLog();
+    });
+  }
+  
   if (detailClose) {
     detailClose.addEventListener('click', function () {
       document.getElementById('fault-detail').hidden = true;
