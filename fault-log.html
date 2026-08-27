@@ -63,6 +63,25 @@
       <ul class="cause-list" id="cause-list"></ul>
     </div>
 
+    <div class="table-filters">
+      <label for="filter-status">Status</label>
+      <select id="filter-status">
+        <option value="all">All</option>
+        <option value="Open">Open</option>
+        <option value="In progress">In progress</option>
+        <option value="Resolved">Resolved</option>
+      </select>
+
+      <label for="filter-type">Request type</label>
+      <select id="filter-type">
+        <option value="all">All</option>
+        <option value="fault">Faults</option>
+        <option value="installation">Installations</option>
+        <option value="after-sales">After-sales</option>
+        <option value="application">Application support</option>
+      </select>
+    </div>
+    
     <div class="table-wrap">  
     <table>
         <thead>
@@ -82,7 +101,7 @@
     </table>
     </div>
     
-    <p id="no-faults" class="no-faults">No faults have been reported yet.</p>
+    <p id="no-faults" class="no-faults">No report have been submitted yet.</p>
 
     <div id="fault-detail" class="fault-detail" hidden>
       <h2 id="detail-title">Fault detail</h2>

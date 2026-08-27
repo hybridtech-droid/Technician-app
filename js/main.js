@@ -438,8 +438,6 @@ function renderRootCauses() {
 
   let causes = Object.keys(counts);
 
-  list.innerHTML = '';
-
   if (causes.length === 0) {
     let empty = document.createElement('li');
     empty.textContent = 'No resolved reports in this category yet.';
@@ -504,13 +502,39 @@ function renderFaultLog() {
    tbody.innerHTML = '';
 
   if (faults.length === 0) {
-    emptyMessage.hidden = false;
+    emptyMessage.hidden = false; 
     return;
   }
 
   emptyMessage.hidden = true;
 
-  faults.forEach(function (fault) {
+  let statusFilterEl = document.getElementById('filter-status');
+  let typeFilterEl = document.getElementById('filter-type');
+
+  let statusFilter = statusFilterEl ? statusFilterEl.value : 'all';
+  let typeFilter = typeFilterEl ? typeFilterEl.value : 'all';
+
+  let ordered = faults.slice().reverse().filter(function (fault) {
+    let statusOk = statusFilter === 'all' || fault.status === statusFilter;
+    let typeOk = typeFilter === 'all' || (fault.requestType || 'fault') === typeFilter;
+    return statusOk && typeOk;
+  });
+
+  if (ordered.length === 0) {
+    let row = document.createElement('tr');
+    let cell = document.createElement('td');
+
+    cell.colSpan = 8;
+    cell.textContent = 'No reports match these filters.';
+    cell.style.textAlign = 'center';
+    cell.style.color = '#888888';
+
+    row.appendChild(cell);
+    tbody.appendChild(row);
+    return;
+  }
+  
+  ordered.forEach(function (fault) {
     let row = document.createElement('tr');
 
     let cells = [
@@ -524,9 +548,14 @@ function renderFaultLog() {
       fault.status
     ];
 
-    cells.forEach(function (value) {
+    cells.forEach(function (value, index) {
       let cell = document.createElement('td');
       cell.textContent = value;
+
+      if (index === 7) {
+        cell.className = 'status-cell status-' + value.toLowerCase().replace(' ', '-');
+      }
+
       row.appendChild(cell);
     });
   
@@ -811,6 +840,21 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  let filterStatus = document.getElementById('filter-status');
+  let filterType = document.getElementById('filter-type');
+
+  if (filterStatus) {
+    filterStatus.addEventListener('change', function () {
+      renderFaultLog();
+    });
+  }
+
+  if (filterType) {
+    filterType.addEventListener('change', function () {
+      renderFaultLog();
+    });
+  }
+  
   let causeFilter = document.getElementById('cause-filter');
 
   if (causeFilter) {

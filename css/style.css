@@ -874,3 +874,38 @@ legend {
   max-width: 280px;
   margin-bottom: 8px;
 }
+
+.status-cell {
+  font-weight: 600;
+}
+
+.status-open {
+  color: #c0392b;
+}
+
+.status-in-progress {
+  color: #b8860b;
+}
+
+.status-resolved {
+  color: #1e8449;
+}
+
+.table-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.table-filters label {
+  margin: 0;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.table-filters select {
+  width: auto;
+  min-width: 150px;
+}
