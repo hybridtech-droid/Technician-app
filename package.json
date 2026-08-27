@@ -20,6 +20,7 @@
   "homepage": "https://github.com/hybridtech-droid/Technician-app#readme",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.120.0",
+    "better-sqlite3": "^13.0.3",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.6.2"
