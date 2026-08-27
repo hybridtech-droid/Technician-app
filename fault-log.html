@@ -50,6 +50,18 @@
     <p>Open: <span id="count-open">0</span></p>
     <p>In progress: <span id="count-progress">0</span></p>
     <p>Resolved: <span id="count-resolved">0</span></p>
+    <div id="root-cause-summary" hidden>
+      <h2>Root causes</h2>
+      <label for="cause-filter">Show root causes for</label>
+      <select id="cause-filter" class="cause-filter">
+        <option value="all">All request types</option>
+        <option value="fault">Faults</option>
+        <option value="installation">Installations</option>
+        <option value="after-sales">After-sales</option>
+        <option value="application">Application support</option>
+      </select>
+      <ul class="cause-list" id="cause-list"></ul>
+    </div>
 
     <div class="table-wrap">  
     <table>

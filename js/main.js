@@ -209,7 +209,14 @@ function prettyLabel(value) {
     'first-time': 'First time observed',
     intermittent: 'Intermittent',
     consistent: 'Happens consistently',
-    worsening: 'Getting worse over time'
+    consumable: 'Consumable or reagent',
+    worsening: 'Getting worse over time',
+    'component-failure': 'Component failure',
+    wear: 'Normal wear',
+    'installation-error': 'Installation or setup error',
+    'user-error': 'User or operator error',
+    'power-supply': 'Power supply or environment',
+    'no-fault-found': 'No fault found'
   };
   return labels[value] || value;
 }
@@ -391,9 +398,79 @@ function applyRequestType(type) {
   }
 }
 
+function renderRootCauses() {
+  let container = document.getElementById('root-cause-summary');
+  let list = document.getElementById('cause-list');
+
+  if (!container || !list) {
+    return;
+  }
+
+  let faults = loadFaults();
+
+  let filterEl = document.getElementById('cause-filter');
+  let filter = filterEl ? filterEl.value : 'all';
+
+  let anyResolved = faults.some(function (f) {
+    return Boolean(f.rootCause);
+  });
+
+  container.hidden = !anyResolved;
+  list.innerHTML = '';
+
+  if (!anyResolved) {
+    return;
+  }
+
+  let counts = {};
+
+  faults.forEach(function (fault) {
+    let typeMatches = filter === 'all' || (fault.requestType || 'fault') === filter;
+
+    if (fault.rootCause && typeMatches) {
+      if (counts[fault.rootCause]) {
+        counts[fault.rootCause] = counts[fault.rootCause] + 1;
+      } else {
+        counts[fault.rootCause] = 1;
+      }
+    }
+  });
+
+  let causes = Object.keys(counts);
+
+  list.innerHTML = '';
+
+  if (causes.length === 0) {
+    let empty = document.createElement('li');
+    empty.textContent = 'No resolved reports in this category yet.';
+    list.appendChild(empty);
+    return;
+  }
+
+  causes.sort(function (a, b) {
+    return counts[b] - counts[a];
+  });
+
+  causes.forEach(function (cause) {
+    let item = document.createElement('li');
+    let label = document.createElement('span');
+    let count = document.createElement('span');
+
+    label.textContent = prettyLabel(cause);
+    count.textContent = counts[cause];
+    count.className = 'cause-count';
+
+    item.appendChild(label);
+    item.appendChild(count);
+    list.appendChild(item);
+  });
+}
+
 function renderFaultLog() {
   let tbody = document.getElementById('fault-log-body');
   let emptyMessage = document.getElementById('no-faults');
+
+  renderRootCauses();
 
   if (!tbody) {
     return;
@@ -604,7 +681,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (existing && existing.resolutionNotes) {
           return;
         }
-        
+
         if (resolutionFields) {
           resolutionFields.hidden = false;
         }
@@ -731,6 +808,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
       chatInput.disabled = false;
       chatInput.focus();
+    });
+  }
+
+  let causeFilter = document.getElementById('cause-filter');
+
+  if (causeFilter) {
+    causeFilter.addEventListener('change', function () {
+      renderRootCauses();
     });
   }
 
