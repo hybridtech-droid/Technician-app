@@ -5,6 +5,7 @@ const path = require('path');
 
 const Anthropic = require('@anthropic-ai/sdk');
 const rateLimit = require('express-rate-limit');
+const db = require('./db');
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
@@ -154,6 +155,102 @@ app.post('/api/chat', aiLimiter, async function (req, res) {
   } catch (err) {
     console.error('Chat error:', err.message);
     res.status(500).json({ error: 'Chat service unavailable.' });
+  }
+});
+
+app.get('/api/reports', function (req, res) {
+  try {
+    const rows = db.prepare('SELECT * FROM reports ORDER BY rowid').all();
+    res.json(rows);
+  } catch (err) {
+    console.error('Database read error:', err.message);
+    res.status(500).json({ error: 'Could not load reports.' });
+  }
+});
+
+app.post('/api/reports', function (req, res) {
+  const r = req.body;
+
+  if (!r || !r.id) {
+    return res.status(400).json({ error: 'Report id is required.' });
+  }
+
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO reports (
+        id, technician, equipment, location, requestType, type, severity, onset,
+        installStage, equipmentModel, timeSinceInstall, warrantyStatus,
+        applicationImpact, recurring, date, status, description, diagnosis,
+        rootCause, resolutionNotes, resolvedDate
+      ) VALUES (
+        @id, @technician, @equipment, @location, @requestType, @type, @severity, @onset,
+        @installStage, @equipmentModel, @timeSinceInstall, @warrantyStatus,
+        @applicationImpact, @recurring, @date, @status, @description, @diagnosis,
+        @rootCause, @resolutionNotes, @resolvedDate
+      )
+    `);
+
+    stmt.run({
+      id: r.id,
+      technician: r.technician || '',
+      equipment: r.equipment || '',
+      location: r.location || '',
+      requestType: r.requestType || 'fault',
+      type: r.type || '',
+      severity: r.severity || '',
+      onset: r.onset || '',
+      installStage: r.installStage || '',
+      equipmentModel: r.equipmentModel || '',
+      timeSinceInstall: r.timeSinceInstall || '',
+      warrantyStatus: r.warrantyStatus || '',
+      applicationImpact: r.applicationImpact || '',
+      recurring: r.recurring || '',
+      date: r.date || '',
+      status: r.status || 'Open',
+      description: r.description || '',
+      diagnosis: r.diagnosis || '',
+      rootCause: r.rootCause || '',
+      resolutionNotes: r.resolutionNotes || '',
+      resolvedDate: r.resolvedDate || ''
+    });
+
+    res.json({ ok: true, id: r.id });
+  } catch (err) {
+    console.error('Database write error:', err.message);
+    res.status(500).json({ error: 'Could not save report.' });
+  }
+});
+
+app.patch('/api/reports/:id', function (req, res) {
+  const id = req.params.id;
+  const r = req.body;
+
+  try {
+    const stmt = db.prepare(`
+      UPDATE reports SET
+        status = @status,
+        rootCause = @rootCause,
+        resolutionNotes = @resolutionNotes,
+        resolvedDate = @resolvedDate
+      WHERE id = @id
+    `);
+
+    const result = stmt.run({
+      id: id,
+      status: r.status || 'Open',
+      rootCause: r.rootCause || '',
+      resolutionNotes: r.resolutionNotes || '',
+      resolvedDate: r.resolvedDate || ''
+    });
+
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Report not found.' });
+    }
+
+    res.json({ ok: true, id: id });
+  } catch (err) {
+    console.error('Database update error:', err.message);
+    res.status(500).json({ error: 'Could not update report.' });
   }
 });
 
