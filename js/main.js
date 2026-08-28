@@ -1,5 +1,6 @@
 let currentFaultId = null;
 let chatMessages = [];
+let allFaults = [];
 
 function readPhotoAsBase64(file) {
   return new Promise(function (resolve, reject) {
@@ -85,18 +86,34 @@ function addChatBubble(text, role) {
   return bubble;
 }
 
-function loadFaults() {
-  let stored = localStorage.getItem('faults');
-  if (stored) {
-    return JSON.parse(stored);
+async function fetchFaults() {
+  const response = await fetch('/api/reports');
+
+  if (!response.ok) {
+    throw new Error('Could not load reports');
   }
-  return [];
+
+  allFaults = await response.json();
+  return allFaults;
 }
 
-function saveFault(fault) {
-  let faults = loadFaults();
-  faults.push(fault);
-  localStorage.setItem('faults', JSON.stringify(faults));
+function loadFaults() {
+  return allFaults;
+}
+
+async function saveFault(fault) {
+  const response = await fetch('/api/reports', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(fault)
+  });
+
+  if (!response.ok) {
+    throw new Error('Could not save report');
+  }
+
+  await fetchFaults();
+  return true;
 }
 
 function findFaultById(id) {
@@ -134,37 +151,48 @@ function buildReportSummary(fault) {
   return parts.join('\n');
 }
 
-function updateFaultStatus(id, newStatus) {
-  let faults = loadFaults();
+async function updateFaultStatus(id, newStatus) {
+  const body = {
+    status: newStatus,
+    rootCause: '',
+    resolutionNotes: '',
+    resolvedDate: ''
+  };
 
-  faults.forEach(function (fault) {
-    if (fault.id === id) {
-      fault.status = newStatus;
-
-      if (newStatus !== 'Resolved') {
-        fault.rootCause = '';
-        fault.resolutionNotes = '';
-        fault.resolvedDate = '';
-      }
-    }
+  const response = await fetch('/api/reports/' + encodeURIComponent(id), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
   });
 
-  localStorage.setItem('faults', JSON.stringify(faults));
+  if (!response.ok) {
+    throw new Error('Could not update status');
+  }
+
+  await fetchFaults();
+  return true;
 }
 
-function saveResolution(id, rootCause, notes) {
-  let faults = loadFaults();
+async function saveResolution(id, rootCause, notes) {
+  const body = {
+    status: 'Resolved',
+    rootCause: rootCause,
+    resolutionNotes: notes,
+    resolvedDate: new Date().toLocaleDateString('en-GB')
+  };
 
-  faults.forEach(function (fault) {
-    if (fault.id === id) {
-      fault.status = 'Resolved';
-      fault.rootCause = rootCause;
-      fault.resolutionNotes = notes;
-      fault.resolvedDate = new Date().toLocaleDateString('en-GB');
-    }
+  const response = await fetch('/api/reports/' + encodeURIComponent(id), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
   });
 
-  localStorage.setItem('faults', JSON.stringify(faults));
+  if (!response.ok) {
+    throw new Error('Could not save resolution');
+  }
+
+  await fetchFaults();
+  return true;
 }
 
 function prettyLabel(value) {
@@ -679,7 +707,7 @@ document.addEventListener('DOMContentLoaded', function () {
           diagnosis: diagnosis
         };
 
-        saveFault(fault);
+        await saveFault(fault);
         if (resultChat) {
           resultChat.href = 'chat.html?report=' + encodeURIComponent(fault.id);
           resultChat.hidden = false;
@@ -721,8 +749,13 @@ document.addEventListener('DOMContentLoaded', function () {
         resolutionFields.hidden = true;
       }
 
-      updateFaultStatus(currentFaultId, detailStatus.value);
-      renderFaultLog();
+      updateFaultStatus(currentFaultId, detailStatus.value)
+        .then(function () {
+          renderFaultLog();
+        })
+        .catch(function (err) {
+          console.error('Status update failed:', err);
+        });
     });
   }
 
@@ -747,14 +780,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
       resolutionError.hidden = true;
 
-      saveResolution(currentFaultId, cause, notes);
-
-      rootCauseField.value = '';
-      resolutionNotes.value = '';
-      resolutionFields.hidden = true;
-
-      document.getElementById('fault-detail').hidden = true;
-      renderFaultLog();
+      saveResolution(currentFaultId, cause, notes)
+        .then(function () {
+          rootCauseField.value = '';
+          resolutionNotes.value = '';
+          resolutionFields.hidden = true;
+          document.getElementById('fault-detail').hidden = true;
+          renderFaultLog();
+        })
+        .catch(function (err) {
+          console.error('Resolution save failed:', err);
+          resolutionError.textContent = 'Could not save. Check your connection.';
+          resolutionError.hidden = false;
+        });
     });
   }
   
@@ -863,6 +901,13 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  renderFaultLog();
+  fetchFaults()
+    .then(function () {
+      renderFaultLog();
+    })
+    .catch(function (err) {
+      console.error('Could not load reports:', err);
+      renderFaultLog();
+    });
 });
 
