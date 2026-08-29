@@ -909,3 +909,22 @@ legend {
   width: auto;
   min-width: 150px;
 }
+
+.footer-line {
+  font-size: 13px;
+  margin: 0;
+}
+
+.footer-sep {
+  margin: 0 10px;
+  opacity: 0.5;
+}
+
+footer .footer-line a {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+footer .footer-line a:hover {
+  text-decoration: underline;
+}
