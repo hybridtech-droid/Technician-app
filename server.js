@@ -138,7 +138,7 @@ app.post('/api/chat', aiLimiter, async function (req, res) {
   }
 
   const systemPrompt =
-    'You are iTechAssist, assisting field service engineers, technicians and application specialists ' +
+    'You are Tervexa, assisting field service engineers, technicians and application specialists ' +
     'across engineering and non-engineering fields. Answer practically and concisely. ' +
     'Ask a clarifying question if the request is ambiguous. Note safety precautions where they apply. ' +
     'Write in plain prose with no Markdown formatting. Keep answers under 250 words unless more detail is clearly needed.';
@@ -264,5 +264,5 @@ app.patch('/api/reports/:id', function (req, res) {
 });
 
 app.listen(PORT, function () {
-  console.log('iTechAssist server running at http://localhost:' + PORT);
+  console.log('Tervexa server running at http://localhost:' + PORT);
 }); 
