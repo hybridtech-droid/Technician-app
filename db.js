@@ -29,4 +29,15 @@ db.exec(`
   )
 `);
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS counters (
+    name TEXT PRIMARY KEY,
+    value INTEGER
+  )
+`);
+
+db.prepare(`
+  INSERT OR IGNORE INTO counters (name, value) VALUES ('report', 0)
+`).run();
+
 module.exports = db;

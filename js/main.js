@@ -112,8 +112,9 @@ async function saveFault(fault) {
     throw new Error('Could not save report');
   }
 
+  const result = await response.json();
   await fetchFaults();
-  return true;
+  return result.id;
 }
 
 function findFaultById(id) {
@@ -492,6 +493,41 @@ function renderRootCauses() {
   });
 }
 
+function seedChatFromReport() {
+  let chatWindow = document.getElementById('chat-window');
+  
+  if (!chatWindow) {
+    return;
+  }
+
+  let params = new URLSearchParams(window.location.search);
+  let reportId = params.get('report');
+
+  if (!reportId) {
+    return;
+  }
+
+  let fault = findFaultById(reportId);
+
+  if (!fault) {
+    return;
+  }
+
+  let summary = buildReportSummary(fault);
+
+  addChatBubble('Continuing from ' + fault.id + '.\n\n' + summary, 'user');
+  chatMessages.push({
+    role: 'user',
+    content: 'I submitted this report:\n\n' + summary
+  });
+
+  addChatBubble(fault.diagnosis || 'No diagnosis recorded.', 'assistant');
+  chatMessages.push({
+    role: 'assistant',
+    content: fault.diagnosis || 'No diagnosis was recorded for this report.'
+  });
+}
+
 function renderFaultLog() {
   let tbody = document.getElementById('fault-log-body');
   let emptyMessage = document.getElementById('no-faults');
@@ -687,7 +723,6 @@ document.addEventListener('DOMContentLoaded', function () {
         resultText.textContent = diagnosis;
 
         let fault = {
-          id: 'F-' + String(loadFaults().length + 1).padStart(3, '0'),
           technician: data.get('technician-name'),
           equipment: data.get('equipment-id'),
           location: data.get('site-location'),
@@ -707,9 +742,9 @@ document.addEventListener('DOMContentLoaded', function () {
           diagnosis: diagnosis
         };
 
-        await saveFault(fault);
+        let savedId = await saveFault(fault);
         if (resultChat) {
-          resultChat.href = 'chat.html?report=' + encodeURIComponent(fault.id);
+          resultChat.href = 'chat.html?report=' + encodeURIComponent(savedId);
           resultChat.hidden = false;
         }
         faultForm.reset();
@@ -810,33 +845,6 @@ document.addEventListener('DOMContentLoaded', function () {
     applyRequestType(requestType.value);
   }
   
-  let chatWindow = document.getElementById('chat-window');
-  
-  if (chatWindow) {
-    let params = new URLSearchParams(window.location.search);
-    let reportId = params.get('report');
-
-    if (reportId) {
-      let fault = findFaultById(reportId);
-
-      if (fault) {
-        let summary = buildReportSummary(fault);
-
-        addChatBubble('Continuing from ' + fault.id + '.\n\n' + summary, 'user');
-        chatMessages.push({
-          role: 'user',
-          content: 'I submitted this report:\n\n' + summary
-        });
-
-        addChatBubble(fault.diagnosis || 'No diagnosis recorded.', 'assistant');
-        chatMessages.push({
-          role: 'assistant',
-          content: fault.diagnosis || 'No diagnosis was recorded for this report.'
-        });
-      }
-    }
-  }
-  
   let chatForm = document.getElementById('chat-form');
   let chatInput = document.getElementById('chat-input');
 
@@ -904,6 +912,7 @@ document.addEventListener('DOMContentLoaded', function () {
   fetchFaults()
     .then(function () {
       renderFaultLog();
+      seedChatFromReport();
     })
     .catch(function (err) {
       console.error('Could not load reports:', err);

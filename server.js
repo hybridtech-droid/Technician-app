@@ -171,11 +171,20 @@ app.get('/api/reports', function (req, res) {
 app.post('/api/reports', function (req, res) {
   const r = req.body;
 
-  if (!r || !r.id) {
-    return res.status(400).json({ error: 'Report id is required.' });
+  if (!r) {
+    return res.status(400).json({ error: 'No report data provided.' });
   }
 
   try {
+    const bump = db.transaction(function () {
+      db.prepare('UPDATE counters SET value = value + 1 WHERE name = ?').run('report');
+      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('report');
+      return row.value;
+    });
+
+    const nextNumber = bump();
+    const newId = 'F-' + String(nextNumber).padStart(3, '0');
+
     const stmt = db.prepare(`
       INSERT INTO reports (
         id, technician, equipment, location, requestType, type, severity, onset,
@@ -191,7 +200,7 @@ app.post('/api/reports', function (req, res) {
     `);
 
     stmt.run({
-      id: r.id,
+      id: newId,
       technician: r.technician || '',
       equipment: r.equipment || '',
       location: r.location || '',
@@ -214,7 +223,7 @@ app.post('/api/reports', function (req, res) {
       resolvedDate: r.resolvedDate || ''
     });
 
-    res.json({ ok: true, id: r.id });
+    res.json({ ok: true, id: newId });
   } catch (err) {
     console.error('Database write error:', err.message);
     res.status(500).json({ error: 'Could not save report.' });
