@@ -40,4 +40,17 @@ db.prepare(`
   INSERT OR IGNORE INTO counters (name, value) VALUES ('report', 0)
 `).run();
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT UNIQUE NOT NULL,
+    passwordHash TEXT NOT NULL,
+    fullName TEXT,
+    phone TEXT,
+    company TEXT,
+    role TEXT,
+    createdAt TEXT
+  )
+`);
+
 module.exports = db;

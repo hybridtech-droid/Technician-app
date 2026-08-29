@@ -6,6 +6,8 @@ const path = require('path');
 const Anthropic = require('@anthropic-ai/sdk');
 const rateLimit = require('express-rate-limit');
 const db = require('./db');
+const session = require('express-session');
+const bcrypt = require('bcrypt');
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
@@ -15,6 +17,16 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json({ limit: '10mb'}));
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'change-this-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    maxAge: 1000 * 60 * 60 * 8
+  }
+}));
 app.use(express.static('.'));
 
 const aiLimiter = rateLimit({
