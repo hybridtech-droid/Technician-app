@@ -86,17 +86,20 @@
         <input type="password" id="password" name="password"
                placeholder="Minimum 8 characters, include letters and numbers"
                autocomplete="new-password"
+               minlength="8"
                required>
 
         <label for="confirm-password">Confirm password</label>
         <input type="password" id="confirm-password" name="confirm-password"
                placeholder="Re-enter your password"
                autocomplete="new-password"
+               minlength="8"
                required>
+        <span id="confirm-password-error" class="field-error" hidden></span>
 
         <label class="form-legal">
             <input type="checkbox" id="terms" name="terms" required>
-            <span>I have read and agree to the <a href="terms.html" target="_blank" class="legal-highlight">Terms and Conditions</a> and 
+            <span>I have read and agree to the <a href="terms.html" target="_blank" class="legal-highlight">Terms and Conditions</a> and
                 <a href="privacy.html" target="_blank" class="legal-highlight">Privacy Policy</a>.
             </span>
         </label>
@@ -106,7 +109,9 @@
             <span>I understand that AI-generated diagnoses and recommendation are suggestions only and must be verified by a qualified engineer or specialist before any action is taken.</span>
         </label>
 
-        <button type="submit">Create account</button>
+        <span id="signup-error" class="field-error" hidden></span>
+
+        <button type="submit" id="signup-submit">Create account</button>
 
     </form>
    </div>
@@ -119,5 +124,3 @@
 <script src="js/main.js"></script>
 </body>
 </html>
-
-

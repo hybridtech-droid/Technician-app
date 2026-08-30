@@ -2,6 +2,15 @@ let currentFaultId = null;
 let chatMessages = [];
 let allFaults = [];
 
+function redirectToLogin() {
+  let path = window.location.pathname;
+  let onAuthPage = path.endsWith('login.html') || path.endsWith('signup.html');
+
+  if (!onAuthPage) {
+    window.location.href = 'login.html';
+  }
+}
+
 function readPhotoAsBase64(file) {
   return new Promise(function (resolve, reject) {
     let reader = new FileReader();
@@ -43,12 +52,28 @@ function readPhotoAsBase64(file) {
   });
 }
 
+function getStoredLanguage() {
+  try {
+    return localStorage.getItem('tervexa-language') || 'en';
+  } catch (err) {
+    // Some browsers block storage access entirely (private mode, strict
+    // privacy settings). Fall back to English rather than breaking the AI
+    // request over it.
+    return 'en';
+  }
+}
+
 async function getDiagnosis(payload) {
   const response = await fetch('/api/diagnose', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(Object.assign({}, payload, { language: getStoredLanguage() }))
   });
+
+  if (response.status === 401) {
+    redirectToLogin();
+    throw new Error('Not logged in');
+  }
 
   if (!response.ok) {
     throw new Error('Diagnosis request failed');
@@ -62,8 +87,13 @@ async function sendChatMessage(messages) {
   const response = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages: messages })
+    body: JSON.stringify({ messages: messages, language: getStoredLanguage() })
   });
+
+  if (response.status === 401) {
+    redirectToLogin();
+    throw new Error('Not logged in');
+  }
 
   if (!response.ok) {
     throw new Error('Chat request failed');
@@ -89,6 +119,11 @@ function addChatBubble(text, role) {
 async function fetchFaults() {
   const response = await fetch('/api/reports');
 
+  if (response.status === 401) {
+    redirectToLogin();
+    throw new Error('Not logged in');
+  }
+
   if (!response.ok) {
     throw new Error('Could not load reports');
   }
@@ -107,6 +142,11 @@ async function saveFault(fault) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(fault)
   });
+
+  if (response.status === 401) {
+    redirectToLogin();
+    throw new Error('Not logged in');
+  }
 
   if (!response.ok) {
     throw new Error('Could not save report');
@@ -166,6 +206,11 @@ async function updateFaultStatus(id, newStatus) {
     body: JSON.stringify(body)
   });
 
+  if (response.status === 401) {
+    redirectToLogin();
+    throw new Error('Not logged in');
+  }
+
   if (!response.ok) {
     throw new Error('Could not update status');
   }
@@ -187,6 +232,11 @@ async function saveResolution(id, rootCause, notes) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
+
+  if (response.status === 401) {
+    redirectToLogin();
+    throw new Error('Not logged in');
+  }
 
   if (!response.ok) {
     throw new Error('Could not save resolution');
@@ -495,7 +545,7 @@ function renderRootCauses() {
 
 function seedChatFromReport() {
   let chatWindow = document.getElementById('chat-window');
-  
+
   if (!chatWindow) {
     return;
   }
@@ -566,7 +616,7 @@ function renderFaultLog() {
    tbody.innerHTML = '';
 
   if (faults.length === 0) {
-    emptyMessage.hidden = false; 
+    emptyMessage.hidden = false;
     return;
   }
 
@@ -597,7 +647,7 @@ function renderFaultLog() {
     tbody.appendChild(row);
     return;
   }
-  
+
   ordered.forEach(function (fault) {
     let row = document.createElement('tr');
 
@@ -622,17 +672,110 @@ function renderFaultLog() {
 
       row.appendChild(cell);
     });
-  
+
     row.classList.add('clickable-row');
     row.addEventListener('click', function () {
       showFaultDetail(fault);
     });
-    
+
     tbody.appendChild(row);
   });
 }
 
+function firstNameFrom(data) {
+  if (data.fullName && data.fullName.trim().length > 0) {
+    return data.fullName.trim().split(/\s+/)[0];
+  }
+
+  // Older accounts, or ones that skipped the name field, fall back to
+  // whatever's before the @ in their email rather than showing nothing.
+  if (data.email) {
+    return data.email.split('@')[0];
+  }
+
+  return 'there';
+}
+
+async function updateAuthNav() {
+  let navLinksEl = document.querySelector('.nav-links');
+
+  if (!navLinksEl) {
+    return;
+  }
+
+  let loginLink = navLinksEl.querySelector('a[href="login.html"]');
+  let signupLink = navLinksEl.querySelector('a[href="signup.html"]');
+
+  try {
+    let response = await fetch('/api/me');
+    let data = await response.json();
+
+    if (data.loggedIn) {
+      if (loginLink) {
+        loginLink.hidden = true;
+      }
+      if (signupLink) {
+        signupLink.hidden = true;
+      }
+
+      let nameSpan = document.getElementById('nav-username');
+
+      if (!nameSpan) {
+        nameSpan = document.createElement('span');
+        nameSpan.id = 'nav-username';
+        nameSpan.className = 'nav-user';
+        navLinksEl.appendChild(nameSpan);
+      }
+
+      nameSpan.textContent = 'Hi, ' + firstNameFrom(data);
+
+      if (!document.getElementById('nav-logout')) {
+        let logoutLink = document.createElement('a');
+        logoutLink.href = '#';
+        logoutLink.id = 'nav-logout';
+        logoutLink.className = 'nav-logout';
+        logoutLink.textContent = 'Log out';
+
+        logoutLink.addEventListener('click', async function (e) {
+          e.preventDefault();
+
+          try {
+            await fetch('/api/logout', { method: 'POST' });
+          } catch (err) {
+            console.error('Logout request failed:', err);
+          }
+
+          window.location.href = 'login.html';
+        });
+
+        navLinksEl.appendChild(logoutLink);
+      }
+    } else {
+      if (loginLink) {
+        loginLink.hidden = false;
+      }
+      if (signupLink) {
+        signupLink.hidden = false;
+      }
+
+      let existingName = document.getElementById('nav-username');
+      if (existingName) {
+        existingName.remove();
+      }
+
+      let existingLogout = document.getElementById('nav-logout');
+      if (existingLogout) {
+        existingLogout.remove();
+      }
+    }
+  } catch (err) {
+    console.error('Could not check login status:', err);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
+
+  updateAuthNav();
 
   let menuToggle = document.getElementById('menuToggle');
   let navLinks = document.querySelector('.nav-links');
@@ -640,6 +783,23 @@ document.addEventListener('DOMContentLoaded', function () {
   if (menuToggle && navLinks) {
     menuToggle.addEventListener('click', function () {
       navLinks.classList.toggle('open');
+    });
+  }
+
+  let langSelector = document.getElementById('lang-selector');
+
+  if (langSelector) {
+    // Restore whatever was picked on a previous page — without this the
+    // selector silently resets to English on every navigation, which is
+    // exactly what looked broken ("I changed it and it's back to English").
+    langSelector.value = getStoredLanguage();
+
+    langSelector.addEventListener('change', function () {
+      try {
+        localStorage.setItem('tervexa-language', langSelector.value);
+      } catch (err) {
+        console.error('Could not save language preference:', err);
+      }
     });
   }
 
@@ -655,7 +815,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   }
-  
+
   let resultBox = document.getElementById('diagnosis-result');
   let resultText = document.getElementById('diagnosis-text');
   let resultChat = document.getElementById('result-chat');
@@ -830,7 +990,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
   }
-  
+
   if (detailClose) {
     detailClose.addEventListener('click', function () {
       document.getElementById('fault-detail').hidden = true;
@@ -844,7 +1004,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     applyRequestType(requestType.value);
   }
-  
+
   let chatForm = document.getElementById('chat-form');
   let chatInput = document.getElementById('chat-input');
 
@@ -900,7 +1060,7 @@ document.addEventListener('DOMContentLoaded', function () {
       renderFaultLog();
     });
   }
-  
+
   let causeFilter = document.getElementById('cause-filter');
 
   if (causeFilter) {
@@ -909,14 +1069,137 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  fetchFaults()
-    .then(function () {
-      renderFaultLog();
-      seedChatFromReport();
-    })
-    .catch(function (err) {
-      console.error('Could not load reports:', err);
-      renderFaultLog();
-    });
-});
+  let loginForm = document.getElementById('login-form');
 
+  if (loginForm) {
+    loginForm.addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      let errorBox = document.getElementById('login-error');
+      let submitBtn = document.getElementById('login-submit');
+      let email = document.getElementById('email').value.trim();
+      let password = document.getElementById('password').value;
+      let rememberField = document.getElementById('remember-me');
+      let rememberMe = Boolean(rememberField && rememberField.checked);
+
+      errorBox.hidden = true;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Logging in...';
+
+      try {
+        let response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, password: password, rememberMe: rememberMe })
+        });
+
+        let data = await response.json();
+
+        if (!response.ok) {
+          errorBox.textContent = data.error || 'Could not log in.';
+          errorBox.hidden = false;
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Log in';
+          return;
+        }
+
+        window.location.href = 'index.html';
+      } catch (err) {
+        errorBox.textContent = 'Could not reach the server. Check your connection and try again.';
+        errorBox.hidden = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Log in';
+      }
+    });
+  }
+
+  let signupForm = document.getElementById('signup-form');
+
+  if (signupForm) {
+    signupForm.addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      let errorBox = document.getElementById('signup-error');
+      let confirmError = document.getElementById('confirm-password-error');
+      let submitBtn = document.getElementById('signup-submit');
+      let confirmField = document.getElementById('confirm-password');
+
+      errorBox.hidden = true;
+      confirmError.hidden = true;
+      confirmField.classList.remove('input-invalid');
+
+      let fullName = document.getElementById('full-name').value.trim();
+      let phone = document.getElementById('phone').value.trim();
+      let role = document.getElementById('role').value;
+      let email = document.getElementById('email').value.trim();
+      let company = document.getElementById('company').value.trim();
+      let password = document.getElementById('password').value;
+      let confirmPassword = confirmField.value;
+
+      if (password.length < 8) {
+        errorBox.textContent = 'Password must be at least 8 characters.';
+        errorBox.hidden = false;
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        confirmError.textContent = 'Passwords do not match.';
+        confirmError.hidden = false;
+        confirmField.classList.add('input-invalid');
+        confirmField.focus();
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating account...';
+
+      try {
+        let response = await fetch('/api/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: email,
+            password: password,
+            fullName: fullName,
+            phone: phone,
+            company: company,
+            role: role
+          })
+        });
+
+        let data = await response.json();
+
+        if (!response.ok) {
+          errorBox.textContent = data.error || 'Could not create account.';
+          errorBox.hidden = false;
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Create account';
+          return;
+        }
+
+        window.location.href = 'index.html';
+      } catch (err) {
+        errorBox.textContent = 'Could not reach the server. Check your connection and try again.';
+        errorBox.hidden = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create account';
+      }
+    });
+  }
+
+  let needsFaultData = document.getElementById('fault-log-body') ||
+    document.getElementById('chat-window') ||
+    document.getElementById('fault-form');
+
+  if (needsFaultData) {
+    fetchFaults()
+      .then(function () {
+        renderFaultLog();
+        seedChatFromReport();
+      })
+      .catch(function (err) {
+        console.error('Could not load reports:', err);
+        renderFaultLog();
+      });
+  }
+});

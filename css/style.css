@@ -156,6 +156,11 @@ button[type="submit"]:hover {
   background-color: #007a96;
 }
 
+button[type="submit"]:disabled {
+  background-color: #9fb8bc;
+  cursor: not-allowed;
+}
+
 .auth-card {
   background-color: #ffffff;
   border-radius: 16px;
@@ -927,4 +932,32 @@ footer .footer-line a {
 
 footer .footer-line a:hover {
   text-decoration: underline;
+}
+
+.nav-user {
+  color: #ffffff;
+  font-size: 13px;
+  opacity: 0.9;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.nav-logout {
+  cursor: pointer;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 5px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 16px;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+
+.nav-logout:hover {
+  background-color: #ffffff;
+  color: #0096b7;
+  text-decoration: none;
 }
