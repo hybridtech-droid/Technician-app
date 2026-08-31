@@ -10,19 +10,19 @@
 <body>
 
     <header>
-      <nav>
-        <span class="brand">Tervexa</span>
-        <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">☰</button>
-        <div class="nav-links">
-          <a href="index.html">Home</a>
-          <a href="about.html">About</a>
-          <a href="fault-report.html">Report a fault</a>
-          <a href="fault-log.html">Fault log</a>
-          <a href="chat.html">Ask AI</a>
-          <a href="login.html">Login</a>
-          <a href="signup.html">Sign up</a>
-        </div>
-        <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language">
+        <nav>
+            <span class="brand">Tervexa</span>
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">☰</button>
+            <div class="nav-links">
+              <a href="index.html" data-i18n="nav.home">Home</a>
+              <a href="about.html" data-i18n="nav.about">About</a>
+              <a href="fault-report.html" data-i18n="nav.reportFault">Report a fault</a>
+              <a href="fault-log.html" data-i18n="nav.faultLog">Fault log</a>
+              <a href="chat.html" data-i18n="nav.askAI">Ask AI</a>
+              <a href="login.html" data-i18n="nav.login">Login</a>
+              <a href="signup.html" data-i18n="nav.signup">Sign up</a>
+            </div>
+            <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language">
                 <option value="en">English</option>
                 <option value="fr">Français</option>
                 <option value="es">Español</option>
@@ -36,203 +36,189 @@
                 <option value="ja">日本語</option>
                 <option value="ko">한국어</option>
                 <option value="sv">Svenska</option>
-        </select>  
-      </nav>
+            </select>
+        </nav>
     </header>
 
     <main>
+      <div class="page-card">
 
-    <div class="page-card">
+        <div class="page-card-header">
+          <h1 id="page-title" data-i18n="report.pageTitle">Submit a fault report</h1>
+          <p id="page-subtitle" data-i18n="report.pageSubtitle">Fill in the details below. The AI will analyse your report and suggest a diagnosis.</p>
+        </div>
 
-     <div class="page-card-header">
-      <h1 id="page-title">Submit a fault report</h1>
-      <p id="page-subtitle">Fill in the details below. The AI will analyse your report and suggest a diagnosis.</p>
-     </div>
+        <form id="fault-form">
 
-    <form id="fault-form" action="#" method="post" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="request-type" data-i18n="report.requestTypeLabel">Request type</label>
+            <select id="request-type" name="request-type">
+              <option value="fault" data-i18n="report.requestType.fault">Fault diagnosis</option>
+              <option value="installation" data-i18n="report.requestType.installation">Installation and commissioning</option>
+              <option value="after-sales" data-i18n="report.requestType.afterSales">After-sales support</option>
+              <option value="application" data-i18n="report.requestType.application">Application and process support</option>
+            </select>
+          </div>
+
+          <div class="form-grid">
 
             <div class="form-group">
-        <label for="request-type">Request type</label>
-        <select id="request-type" name="request-type" required>
-          <option value="fault">Fault diagnosis</option>
-          <option value="installation">Installation and commissioning</option>
-          <option value="after-sales">After-sales support</option>
-          <option value="application">Application and process support</option>
-        </select>
+              <label for="technician-name" data-i18n="report.yourNameLabel">Your name</label>
+              <input type="text" id="technician-name" name="technician-name" placeholder="Enter your full name" data-i18n-placeholder="report.yourNamePlaceholder">
+            </div>
+
+            <div class="form-group">
+              <label for="technician-id" data-i18n="report.yourIdLabel">Your ID</label>
+              <input type="text" id="technician-id" name="technician-id" placeholder="e.g. TECH-0042" data-i18n-placeholder="report.yourIdPlaceholder">
+            </div>
+
+            <div class="form-group">
+              <label for="equipment-id" data-i18n="report.equipmentIdLabel">Equipment ID</label>
+              <input type="text" id="equipment-id" name="equipment-id" placeholder="e.g. PUMP-003" data-i18n-placeholder="report.equipmentIdPlaceholder">
+            </div>
+
+            <div class="form-group">
+              <label for="site-location" data-i18n="report.siteLocationLabel">Site location</label>
+              <input type="text" id="site-location" name="site-location" placeholder="e.g. Lagos — Apapa terminal" data-i18n-placeholder="report.siteLocationPlaceholder">
+            </div>
+
+            <div class="form-group fault-only">
+              <label for="fault-type" data-i18n="report.faultTypeLabel">Fault type</label>
+              <select id="fault-type" name="fault-type">
+                <option value="" data-i18n="report.faultTypeDefault">-- Select fault type --</option>
+                <option value="electrical" data-i18n="report.faultType.electrical">Electrical</option>
+                <option value="mechanical" data-i18n="report.faultType.mechanical">Mechanical</option>
+                <option value="electronic" data-i18n="report.faultType.electronic">Electronic and instrumentation</option>
+                <option value="hvac" data-i18n="report.faultType.hvac">HVAC and refrigeration</option>
+                <option value="software" data-i18n="report.faultType.software">Software and controls</option>
+                <option value="structural" data-i18n="report.faultType.structural">Structural and civil</option>
+                <option value="biomedical" data-i18n="report.faultType.biomedical">Biomedical</option>
+                <option value="other" data-i18n="report.faultType.other">Other</option>
+              </select>
+            </div>
+
+            <div class="form-group fault-only">
+              <label for="fault-severity" data-i18n="report.severityLabel">Fault severity</label>
+              <select id="fault-severity" name="fault-severity">
+                <option value="" data-i18n="report.severityDefault">-- Select severity --</option>
+                <option value="critical" data-i18n="report.severity.critical">Critical — equipment completely down</option>
+                <option value="high" data-i18n="report.severity.high">High — serious performance loss</option>
+                <option value="medium" data-i18n="report.severity.medium">Medium — partial fault, still running</option>
+                <option value="low" data-i18n="report.severity.low">Low — minor issue, monitor for now</option>
+              </select>
+            </div>
+
+            <div class="form-group install-only hidden">
+              <label for="install-stage" data-i18n="report.installStageLabel">Installation stage</label>
+              <select id="install-stage" name="install-stage">
+                <option value="" data-i18n="report.installStageDefault">-- Select stage --</option>
+                <option value="pre-site" data-i18n="report.installStage.preSite">Pre-site survey</option>
+                <option value="delivery" data-i18n="report.installStage.delivery">Delivery and unpacking</option>
+                <option value="assembly" data-i18n="report.installStage.assembly">Assembly and positioning</option>
+                <option value="connection" data-i18n="report.installStage.connection">Power, water or network connection</option>
+                <option value="calibration" data-i18n="report.installStage.calibration">Calibration and verification</option>
+                <option value="handover" data-i18n="report.installStage.handover">Handover and sign-off</option>
+              </select>
+            </div>
+
+            <div class="form-group install-only hidden">
+              <label for="equipment-model" data-i18n="report.equipmentModelLabel">Equipment make and model</label>
+              <input type="text" id="equipment-model" name="equipment-model" placeholder="e.g. Hologic Panther" data-i18n-placeholder="report.equipmentModelPlaceholder">
+            </div>
+
+            <div class="form-group aftersales-only hidden">
+              <label for="time-since-install" data-i18n="report.timeSinceLabel">Time since installation</label>
+              <select id="time-since-install" name="time-since-install">
+                <option value="" data-i18n="report.timeSinceDefault">-- Select period --</option>
+                <option value="under-1" data-i18n="report.timeSince.under1">Under 1 month</option>
+                <option value="1-to-6" data-i18n="report.timeSince.1to6">1 to 6 months</option>
+                <option value="6-to-12" data-i18n="report.timeSince.6to12">6 to 12 months</option>
+                <option value="1-to-3y" data-i18n="report.timeSince.1to3y">1 to 3 years</option>
+                <option value="over-3y" data-i18n="report.timeSince.over3y">Over 3 years</option>
+              </select>
+            </div>
+
+            <div class="form-group aftersales-only hidden">
+              <label for="warranty-status" data-i18n="report.warrantyLabel">Warranty or contract status</label>
+              <select id="warranty-status" name="warranty-status">
+                <option value="" data-i18n="report.warrantyDefault">-- Select status --</option>
+                <option value="under" data-i18n="report.warranty.under">Under warranty</option>
+                <option value="service" data-i18n="report.warranty.service">Under service contract</option>
+                <option value="expired" data-i18n="report.warranty.expired">Expired</option>
+                <option value="unknown" data-i18n="report.warranty.unknown">Not known</option>
+              </select>
+            </div>
+
+            <div class="form-group application-only hidden">
+              <label for="application-impact" data-i18n="report.impactLabel">What is being affected?</label>
+              <select id="application-impact" name="application-impact">
+                <option value="" data-i18n="report.impactDefault">-- Select impact --</option>
+                <option value="output-quality" data-i18n="report.impact.outputQuality">Output or result quality</option>
+                <option value="throughput" data-i18n="report.impact.throughput">Throughput or speed</option>
+                <option value="contamination" data-i18n="report.impact.contamination">Contamination or carryover</option>
+                <option value="calibration-drift" data-i18n="report.impact.calibrationDrift">Calibration or accuracy drift</option>
+                <option value="user-technique" data-i18n="report.impact.userTechnique">User technique or workflow</option>
+                <option value="consumables" data-i18n="report.impact.consumables">Consumables or reagents</option>
+                <option value="other" data-i18n="report.impact.other">Other</option>
+              </select>
+            </div>
+
+            <div class="form-group application-only hidden">
+              <label for="recurring" data-i18n="report.recurringLabel">Is this recurring?</label>
+              <select id="recurring" name="recurring">
+                <option value="" data-i18n="report.recurringDefault">-- Select --</option>
+                <option value="first-time" data-i18n="report.recurring.firstTime">First time observed</option>
+                <option value="intermittent" data-i18n="report.recurring.intermittent">Intermittent</option>
+                <option value="consistent" data-i18n="report.recurring.consistent">Happens consistently</option>
+                <option value="worsening" data-i18n="report.recurring.worsening">Getting worse over time</option>
+              </select>
+            </div>
+
+          </div>
+
+          <div class="form-group">
+            <label id="description-label" for="fault-description" data-i18n="report.descriptionLabel">Fault description</label>
+            <textarea id="fault-description" name="fault-description" rows="5" placeholder="Describe exactly what you observed — sounds, smells, error codes, what happened before the fault..." data-i18n-placeholder="report.descriptionPlaceholder"></textarea>
+            <span id="description-error" class="field-error" hidden></span>
+          </div>
+
+          <div class="form-group">
+            <label data-i18n="report.uploadPhotoLabel">Upload photo</label>
+            <div class="file-upload-box">
+              <input type="file" id="fault-photo" name="fault-photo" accept="image/*">
+              <label for="fault-photo" class="file-upload-label" data-i18n="report.choosePhoto">Choose a photo</label>
+              <span class="file-name-display" id="file-name" data-i18n="common.noPhotoSelected">No photo selected</span>
+            </div>
+          </div>
+
+          <fieldset class="fault-only" id="group-fault-onset">
+            <legend data-i18n="report.onsetLegend">How did the fault occur?</legend>
+            <div class="radio-group">
+              <label><input type="radio" name="fault-onset" value="sudden"> <span data-i18n="report.onset.sudden">Sudden failure</span></label>
+              <label><input type="radio" name="fault-onset" value="gradual"> <span data-i18n="report.onset.gradual">Gradual degradation</span></label>
+              <label><input type="radio" name="fault-onset" value="external"> <span data-i18n="report.onset.external">External damage</span></label>
+              <label><input type="radio" name="fault-onset" value="unknown"> <span data-i18n="report.onset.unknown">Unknown cause</span></label>
+            </div>
+          </fieldset>
+
+          <button type="submit" id="submit-button" class="btn-primary" data-i18n="report.submit">Submit fault report</button>
+
+        </form>
+
       </div>
-
-      <div class="form-grid">
-
-        <div class="form-group">
-          <label for="technician-name">Your name</label>
-          <input type="text" id="technician-name" name="technician-name" placeholder="Enter your full name" required>
-        </div>
-
-        <div class="form-group">
-          <label for="technician-id">Your ID</label>
-          <input type="text" id="technician-id" name="technician-id" placeholder="e.g. TECH-0042" required>
-        </div>
-
-        <div class="form-group">
-          <label for="equipment-id">Equipment ID</label>
-          <input type="text" id="equipment-id" name="equipment-id" placeholder="e.g. PUMP-003" required>
-        </div>
-
-        <div class="form-group">
-          <label for="site-location">Site location</label>
-          <input type="text" id="site-location" name="site-location" placeholder="e.g. Lagos — Apapa terminal" required>
-        </div>
-
-        <div class="form-group fault-only" id="group-fault-type">
-          <label for="fault-type">Fault type</label>
-          <select id="fault-type" name="fault-type" required>
-            <option value="">-- Select fault type --</option>
-            <option value="electrical">Electrical</option>
-            <option value="mechanical">Mechanical</option>
-            <option value="electronic">Electronic and instrumentation</option>
-            <option value="hvac">HVAC and refrigeration</option>
-            <option value="software">Software and controls</option>
-            <option value="structural">Structural and civil</option>
-            <option value="biomedical">Biomedical</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-
-        <div class="form-group fault-only" id="group-fault-severity">
-          <label for="fault-severity">Fault severity</label>
-          <select id="fault-severity" name="fault-severity" required>
-            <option value="">-- Select severity --</option>
-            <option value="critical">Critical — equipment completely down</option>
-            <option value="high">High — serious performance loss</option>
-            <option value="medium">Medium — partial fault, still running</option>
-            <option value="low">Low — minor issue, monitor for now</option>
-          </select>
-        </div>
-
-        <div class="form-group install-only" id="group-install-stage" hidden>
-          <label for="install-stage">Installation stage</label>
-          <select id="install-stage" name="install-stage">
-            <option value="">-- Select stage --</option>
-            <option value="pre-site">Pre-site survey</option>
-            <option value="delivery">Delivery and unpacking</option>
-            <option value="assembly">Assembly and positioning</option>
-            <option value="connection">Power, water or network connection</option>
-            <option value="calibration">Calibration and verification</option>
-            <option value="handover">Handover and sign-off</option>
-          </select>
-        </div>
-
-        <div class="form-group install-only" id="group-equipment-model" hidden>
-          <label for="equipment-model">Equipment make and model</label>
-          <input type="text" id="equipment-model" name="equipment-model" placeholder="e.g. Hologic Panther">
-        </div>
-
-        <div class="form-group aftersales-only" id="group-time-since" hidden>
-          <label for="time-since-install">Time since installation</label>
-          <select id="time-since-install" name="time-since-install">
-            <option value="">-- Select period --</option>
-            <option value="under-1-month">Under 1 month</option>
-            <option value="1-6-months">1 to 6 months</option>
-            <option value="6-12-months">6 to 12 months</option>
-            <option value="1-3-years">1 to 3 years</option>
-            <option value="over-3-years">Over 3 years</option>
-          </select>
-        </div>
-
-        <div class="form-group aftersales-only" id="group-warranty" hidden>
-          <label for="warranty-status">Warranty or contract status</label>
-          <select id="warranty-status" name="warranty-status">
-            <option value="">-- Select status --</option>
-            <option value="under-warranty">Under warranty</option>
-            <option value="service-contract">Under service contract</option>
-            <option value="expired">Expired</option>
-            <option value="unknown">Not known</option>
-          </select>
-        </div>
-
-                <div class="form-group application-only" id="group-impact" hidden>
-          <label for="application-impact">What is being affected?</label>
-          <select id="application-impact" name="application-impact">
-            <option value="">-- Select impact --</option>
-            <option value="output-quality">Output or result quality</option>
-            <option value="throughput">Throughput or speed</option>
-            <option value="contamination">Contamination or carryover</option>
-            <option value="calibration-drift">Calibration or accuracy drift</option>
-            <option value="user-technique">User technique or workflow</option>
-            <option value="consumables">Consumables or reagents</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-
-        <div class="form-group application-only" id="group-recurring" hidden>
-          <label for="recurring">Is this recurring?</label>
-          <select id="recurring" name="recurring">
-            <option value="">-- Select --</option>
-            <option value="first-time">First time observed</option>
-            <option value="intermittent">Intermittent</option>
-            <option value="consistent">Happens consistently</option>
-            <option value="worsening">Getting worse over time</option>
-          </select>
-        </div>
-
-      </div>
-
-      <div class="form-group">
-        <label for="fault-description" id="description-label">Fault description</label>
-        <textarea id="fault-description" name="fault-description" rows="5"
-          placeholder="Describe exactly what you observed — sounds, smells, error codes, what happened before the fault..."
-          required></textarea>
-        <span class="field-error" id="description-error" hidden></span>
-      </div>
-
-      <div class="form-group">
-        <span class="field-label">Upload photo</span>
-        <div class="file-upload-box">
-          <input type="file" id="fault-photo" name="fault-photo" accept="image/*">
-          <label for="fault-photo" class="file-upload-label">Choose a photo</label>
-        <span class="file-name-display" id="file-name">No photo selected</span>
-        </div>
-      </div>
-
-      <fieldset class="form-group fault-only" id="group-fault-onset">
-        <legend>How did the fault occur?</legend>
-        <div class="radio-group">
-          <input type="radio" id="sudden" name="fault-onset" value="sudden">
-          <label for="sudden">Sudden failure</label>
-        </div>
-        <div class="radio-group">
-          <input type="radio" id="gradual" name="fault-onset" value="gradual">
-          <label for="gradual">Gradual degradation</label>
-        </div>
-        <div class="radio-group">
-          <input type="radio" id="external" name="fault-onset" value="external">
-          <label for="external">External damage</label>
-        </div>
-        <div class="radio-group">
-          <input type="radio" id="unknown" name="fault-onset" value="unknown">
-          <label for="unknown">Unknown cause</label>
-        </div>
-      </fieldset>
-
-      <button type="submit" id="submit-button">Submit fault report</button>
-
-    </form>
 
       <div id="diagnosis-result" class="diagnosis-result" hidden>
-        <h2 id="result-title">Diagnosis</h2>
+        <h2 id="result-title" data-i18n="report.resultTitle">Diagnosis</h2>
         <p id="diagnosis-text"></p>
-        <a href="#" id="result-chat" class="btn-primary" hidden>Continue in chat</a>
+        <a href="#" id="result-chat" class="btn-primary" data-i18n="common.continueInChat" hidden>Continue in chat</a>
       </div>
-
-    </div>
-
     </main>
 
     <footer>
-      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html">Privacy</a><span class="footer-sep">|</span><a href="terms.html">Terms</a><span class="footer-sep">|</span>Security<span class="footer-sep">|</span>Help<span class="footer-sep">|</span>v1.0.0</p>
+      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html" data-i18n="footer.privacy">Privacy</a><span class="footer-sep">|</span><a href="terms.html" data-i18n="footer.terms">Terms</a><span class="footer-sep">|</span><span data-i18n="footer.security">Security</span><span class="footer-sep">|</span><span data-i18n="footer.help">Help</span><span class="footer-sep">|</span>v1.0.0</p>
     </footer>
-  <script src="js/main.js"></script>
+
+<script src="js/i18n.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>
-
-

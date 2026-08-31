@@ -1,5 +1,22 @@
 let currentFaultId = null;
 let chatMessages = [];
+
+// Mirrors the server's password rule exactly (see PASSWORD_PATTERN in
+// server.js) — at least 8 characters, with at least one letter and one
+// number. Checking it here too means someone gets told about a weak
+// password immediately, instead of only after a round trip to the server.
+// Returns an error message string, or null if the password is valid.
+function passwordError(password) {
+  if (!password || password.length < 8) {
+    return t('errors.passwordTooShort');
+  }
+
+  if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+    return t('errors.passwordNeedsLetterNumber');
+  }
+
+  return null;
+}
 let allFaults = [];
 
 function redirectToLogin() {
@@ -52,16 +69,8 @@ function readPhotoAsBase64(file) {
   });
 }
 
-function getStoredLanguage() {
-  try {
-    return localStorage.getItem('tervexa-language') || 'en';
-  } catch (err) {
-    // Some browsers block storage access entirely (private mode, strict
-    // privacy settings). Fall back to English rather than breaking the AI
-    // request over it.
-    return 'en';
-  }
-}
+// getStoredLanguage(), setStoredLanguage(), t(), applyTranslations(), and
+// initLanguage() all live in js/i18n.js, loaded before this file.
 
 async function getDiagnosis(payload) {
   const response = await fetch('/api/diagnose', {
@@ -103,17 +112,65 @@ async function sendChatMessage(messages) {
   return data.reply;
 }
 
-function addChatBubble(text, role) {
+function addChatBubble(text, role, channel) {
   let chatWindow = document.getElementById('chat-window');
   let bubble = document.createElement('div');
 
   bubble.className = 'chat-message chat-message--' + role;
-  bubble.textContent = text.replace(/\*\*/g, '');
+
+  // A message that came in over WhatsApp gets a small label so it's clear
+  // this conversation is shared across both — not two separate histories
+  // that happen to look similar.
+  if (channel === 'whatsapp') {
+    let tag = document.createElement('span');
+    tag.className = 'chat-channel-tag';
+    tag.textContent = 'WhatsApp';
+    bubble.appendChild(tag);
+  }
+
+  let body = document.createElement('span');
+  body.textContent = text.replace(/\*\*/g, '');
+  bubble.appendChild(body);
 
   chatWindow.appendChild(bubble);
   chatWindow.scrollTop = chatWindow.scrollHeight;
 
   return bubble;
+}
+
+// Loads the account's conversation history (from either channel) so a
+// question asked over WhatsApp shows up here, and vice versa — this is
+// what makes "linked to the user profile" actually visible, not just true
+// in the database.
+async function loadConversationHistory() {
+  let chatWindow = document.getElementById('chat-window');
+
+  if (!chatWindow) {
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/conversation');
+
+    if (response.status === 401) {
+      redirectToLogin();
+      return;
+    }
+
+    if (!response.ok) {
+      return;
+    }
+
+    const history = await response.json();
+
+    history.forEach(function (msg) {
+      const role = msg.role === 'assistant' ? 'assistant' : 'user';
+      addChatBubble(msg.content, role, msg.channel);
+      chatMessages.push({ role: msg.role, content: msg.content });
+    });
+  } catch (err) {
+    console.error('Could not load conversation history:', err);
+  }
 }
 
 async function fetchFaults() {
@@ -419,40 +476,40 @@ function applyRequestType(type) {
 
   let descriptionLabel = document.getElementById('description-label');
   let labels = {
-    fault: 'Fault description',
-    installation: 'Installation notes',
-    'after-sales': 'Issue description',
-    application: 'Application or process concern'
+    fault: t('report.descriptionLabel.fault'),
+    installation: t('report.descriptionLabel.installation'),
+    'after-sales': t('report.descriptionLabel.afterSales'),
+    application: t('report.descriptionLabel.application')
   };
 
   if (descriptionLabel) {
-    descriptionLabel.textContent = labels[type] || 'Description';
+    descriptionLabel.textContent = labels[type] || labels.fault;
   }
 
     let wording = {
     fault: {
-      title: 'Submit a fault report',
-      subtitle: 'Fill in the details below. The AI will analyse your report and suggest a diagnosis.',
-      button: 'Submit fault report',
-      result: 'Diagnosis'
+      title: t('report.pageTitle'),
+      subtitle: t('report.pageSubtitle'),
+      button: t('report.submit'),
+      result: t('report.resultTitle')
     },
     installation: {
-      title: 'Installation and commissioning',
-      subtitle: 'Record the installation and get AI guidance on setup, checks and handover.',
-      button: 'Submit installation report',
-      result: 'Installation guidance'
+      title: t('report.wording.installation.title'),
+      subtitle: t('report.wording.installation.subtitle'),
+      button: t('report.wording.installation.button'),
+      result: t('report.wording.installation.result')
     },
     'after-sales': {
-      title: 'After-sales support',
-      subtitle: 'Describe the issue since installation and get AI guidance on next steps.',
-      button: 'Submit support request',
-      result: 'Support guidance'
+      title: t('report.wording.afterSales.title'),
+      subtitle: t('report.wording.afterSales.subtitle'),
+      button: t('report.wording.afterSales.button'),
+      result: t('report.wording.afterSales.result')
     },
     application: {
-      title: 'Application and process support',
-      subtitle: 'Describe the application or process concern and get AI assessment and recommendations.',
-      button: 'Submit application request',
-      result: 'Assessment and recommendations'
+      title: t('report.wording.application.title'),
+      subtitle: t('report.wording.application.subtitle'),
+      button: t('report.wording.application.button'),
+      result: t('report.wording.application.result')
     }
   };
 
@@ -519,7 +576,7 @@ function renderRootCauses() {
 
   if (causes.length === 0) {
     let empty = document.createElement('li');
-    empty.textContent = 'No resolved reports in this category yet.';
+    empty.textContent = t('log.noResolvedInCategory');
     list.appendChild(empty);
     return;
   }
@@ -639,7 +696,7 @@ function renderFaultLog() {
     let cell = document.createElement('td');
 
     cell.colSpan = 8;
-    cell.textContent = 'No reports match these filters.';
+    cell.textContent = t('log.noReportsMatchFilters');
     cell.style.textAlign = 'center';
     cell.style.color = '#888888';
 
@@ -696,6 +753,25 @@ function firstNameFrom(data) {
   return 'there';
 }
 
+// Cached so a later language switch can redraw the "Hi, <name>" / "Log out"
+// nav text (built with document.createElement, so it has no [data-i18n]
+// attribute for applyTranslations to find on its own) without a second
+// /api/me round trip.
+let lastMeData = null;
+
+document.addEventListener('tervexa:languagechange', function () {
+  if (lastMeData && lastMeData.loggedIn) {
+    let nameSpan = document.getElementById('nav-username');
+    let logoutLink = document.getElementById('nav-logout');
+    if (nameSpan) {
+      nameSpan.textContent = t('nav.greetingPrefix') + firstNameFrom(lastMeData);
+    }
+    if (logoutLink) {
+      logoutLink.textContent = t('nav.logout');
+    }
+  }
+});
+
 async function updateAuthNav() {
   let navLinksEl = document.querySelector('.nav-links');
 
@@ -709,6 +785,7 @@ async function updateAuthNav() {
   try {
     let response = await fetch('/api/me');
     let data = await response.json();
+    lastMeData = data;
 
     if (data.loggedIn) {
       if (loginLink) {
@@ -727,14 +804,15 @@ async function updateAuthNav() {
         navLinksEl.appendChild(nameSpan);
       }
 
-      nameSpan.textContent = 'Hi, ' + firstNameFrom(data);
+      nameSpan.textContent = t('nav.greetingPrefix') + firstNameFrom(data);
 
-      if (!document.getElementById('nav-logout')) {
-        let logoutLink = document.createElement('a');
+      let logoutLink = document.getElementById('nav-logout');
+
+      if (!logoutLink) {
+        logoutLink = document.createElement('a');
         logoutLink.href = '#';
         logoutLink.id = 'nav-logout';
         logoutLink.className = 'nav-logout';
-        logoutLink.textContent = 'Log out';
 
         logoutLink.addEventListener('click', async function (e) {
           e.preventDefault();
@@ -750,6 +828,8 @@ async function updateAuthNav() {
 
         navLinksEl.appendChild(logoutLink);
       }
+
+      logoutLink.textContent = t('nav.logout');
     } else {
       if (loginLink) {
         loginLink.hidden = false;
@@ -768,14 +848,20 @@ async function updateAuthNav() {
         existingLogout.remove();
       }
     }
+
+    // Handed back so the caller can reuse this same /api/me response for
+    // language resolution too, instead of a second fetch.
+    return data;
   } catch (err) {
     console.error('Could not check login status:', err);
+    return null;
   }
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
 
-  updateAuthNav();
+  let meData = await updateAuthNav();
+  initLanguage(meData);
 
   let menuToggle = document.getElementById('menuToggle');
   let navLinks = document.querySelector('.nav-links');
@@ -783,23 +869,6 @@ document.addEventListener('DOMContentLoaded', function () {
   if (menuToggle && navLinks) {
     menuToggle.addEventListener('click', function () {
       navLinks.classList.toggle('open');
-    });
-  }
-
-  let langSelector = document.getElementById('lang-selector');
-
-  if (langSelector) {
-    // Restore whatever was picked on a previous page — without this the
-    // selector silently resets to English on every navigation, which is
-    // exactly what looked broken ("I changed it and it's back to English").
-    langSelector.value = getStoredLanguage();
-
-    langSelector.addEventListener('change', function () {
-      try {
-        localStorage.setItem('tervexa-language', langSelector.value);
-      } catch (err) {
-        console.error('Could not save language preference:', err);
-      }
     });
   }
 
@@ -811,7 +880,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (photoInput.files.length > 0) {
         fileNameDisplay.textContent = photoInput.files[0].name;
       } else {
-        fileNameDisplay.textContent = 'No photo selected';
+        fileNameDisplay.textContent = t('common.noPhotoSelected');
       }
     });
   }
@@ -830,8 +899,7 @@ document.addEventListener('DOMContentLoaded', function () {
       let description = descriptionField.value.trim();
 
       if (description.length < 20) {
-        descriptionError.textContent =
-          'Please describe the fault in more detail — at least 20 characters. Include sounds, smells, error codes, or what happened before it failed.';
+        descriptionError.textContent = t('report.descriptionTooShortError');
         descriptionError.hidden = false;
         descriptionField.classList.add('input-invalid');
         descriptionField.focus();
@@ -859,7 +927,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (resultChat) {
         resultChat.hidden = true;
       }
-      resultText.textContent = 'Analysing report...';
+      resultText.textContent = t('common.analysingReport');
       resultBox.scrollIntoView({ behavior: 'smooth' });
 
       try {
@@ -908,10 +976,9 @@ document.addEventListener('DOMContentLoaded', function () {
           resultChat.hidden = false;
         }
         faultForm.reset();
-        fileNameDisplay.textContent = 'No photo selected';
+        fileNameDisplay.textContent = t('common.noPhotoSelected');
         } catch (err) {
-        resultText.textContent =
-          'Could not reach the diagnosis service. Check your connection and try again.';
+        resultText.textContent = t('common.couldNotReachDiagnosis');
       }
     });
   }
@@ -1003,6 +1070,9 @@ document.addEventListener('DOMContentLoaded', function () {
       applyRequestType(requestType.value);
     });
     applyRequestType(requestType.value);
+    document.addEventListener('tervexa:languagechange', function () {
+      applyRequestType(requestType.value);
+    });
   }
 
   let chatForm = document.getElementById('chat-form');
@@ -1024,7 +1094,7 @@ document.addEventListener('DOMContentLoaded', function () {
       chatInput.value = '';
       chatInput.disabled = true;
 
-      let thinking = addChatBubble('Thinking...', 'thinking');
+      let thinking = addChatBubble(t('common.thinking'), 'thinking');
 
       try {
         let recent = chatMessages.slice(-12);
@@ -1036,7 +1106,7 @@ document.addEventListener('DOMContentLoaded', function () {
       } catch (err) {
         thinking.remove();
         addChatBubble(
-          'Could not reach the assistant. Check your connection and try again.',
+          t('common.couldNotReachAssistant'),
           'assistant'
         );
       }
@@ -1084,7 +1154,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
       errorBox.hidden = true;
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Logging in...';
+      submitBtn.textContent = t('login.submitBusy');
 
       try {
         let response = await fetch('/api/login', {
@@ -1096,19 +1166,21 @@ document.addEventListener('DOMContentLoaded', function () {
         let data = await response.json();
 
         if (!response.ok) {
+          // data.error comes straight from the server, which always
+          // responds in English regardless of this page's language.
           errorBox.textContent = data.error || 'Could not log in.';
           errorBox.hidden = false;
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Log in';
+          submitBtn.textContent = t('login.submit');
           return;
         }
 
         window.location.href = 'index.html';
       } catch (err) {
-        errorBox.textContent = 'Could not reach the server. Check your connection and try again.';
+        errorBox.textContent = t('errors.couldNotReachServer');
         errorBox.hidden = false;
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Log in';
+        submitBtn.textContent = t('login.submit');
       }
     });
   }
@@ -1135,15 +1207,20 @@ document.addEventListener('DOMContentLoaded', function () {
       let company = document.getElementById('company').value.trim();
       let password = document.getElementById('password').value;
       let confirmPassword = confirmField.value;
+      let termsField = document.getElementById('terms');
+      let disclaimerField = document.getElementById('disclaimer');
+      let termsAccepted = Boolean(termsField && termsField.checked);
+      let disclaimerAccepted = Boolean(disclaimerField && disclaimerField.checked);
 
-      if (password.length < 8) {
-        errorBox.textContent = 'Password must be at least 8 characters.';
+      let signupPwError = passwordError(password);
+      if (signupPwError) {
+        errorBox.textContent = signupPwError;
         errorBox.hidden = false;
         return;
       }
 
       if (password !== confirmPassword) {
-        confirmError.textContent = 'Passwords do not match.';
+        confirmError.textContent = t('errors.passwordsDontMatch');
         confirmError.hidden = false;
         confirmField.classList.add('input-invalid');
         confirmField.focus();
@@ -1151,7 +1228,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Creating account...';
+      submitBtn.textContent = t('signup.submitBusy');
 
       try {
         let response = await fetch('/api/signup', {
@@ -1163,7 +1240,13 @@ document.addEventListener('DOMContentLoaded', function () {
             fullName: fullName,
             phone: phone,
             company: company,
-            role: role
+            role: role,
+            termsAccepted: termsAccepted,
+            disclaimerAccepted: disclaimerAccepted,
+            // Carries over whatever language they already had selected
+            // while browsing before signing up, so the new account isn't
+            // reset to English.
+            preferredLanguage: getStoredLanguage()
           })
         });
 
@@ -1173,16 +1256,129 @@ document.addEventListener('DOMContentLoaded', function () {
           errorBox.textContent = data.error || 'Could not create account.';
           errorBox.hidden = false;
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Create account';
+          submitBtn.textContent = t('signup.submit');
           return;
         }
 
         window.location.href = 'index.html';
       } catch (err) {
-        errorBox.textContent = 'Could not reach the server. Check your connection and try again.';
+        errorBox.textContent = t('errors.couldNotReachServer');
         errorBox.hidden = false;
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Create account';
+        submitBtn.textContent = t('signup.submit');
+      }
+    });
+  }
+
+  let resetRequestForm = document.getElementById('reset-request-form');
+
+  if (resetRequestForm) {
+    resetRequestForm.addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      let errorBox = document.getElementById('reset-request-error');
+      let submitBtn = document.getElementById('reset-request-submit');
+      let email = document.getElementById('email').value.trim();
+
+      errorBox.hidden = true;
+      submitBtn.disabled = true;
+      submitBtn.textContent = t('reset.submitBusy');
+
+      try {
+        let response = await fetch('/api/request-password-reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email })
+        });
+
+        let data = await response.json();
+
+        if (!response.ok) {
+          errorBox.textContent = data.error || 'Could not send reset link.';
+          errorBox.hidden = false;
+          submitBtn.disabled = false;
+          submitBtn.textContent = t('reset.submit');
+          return;
+        }
+
+        // Same response whether or not the account exists, so this page
+        // always moves on to "check your email" rather than confirming
+        // one way or the other.
+        window.location.href = 'reset-sent.html';
+      } catch (err) {
+        errorBox.textContent = t('errors.couldNotReachServer');
+        errorBox.hidden = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = t('reset.submit');
+      }
+    });
+  }
+
+  let resetForm = document.getElementById('reset-form');
+
+  if (resetForm) {
+    let resetToken = new URLSearchParams(window.location.search).get('token');
+    let resetError = document.getElementById('reset-error');
+    let confirmError = document.getElementById('confirm-error');
+
+    if (!resetToken) {
+      resetError.textContent = t('newPassword.missingToken');
+      resetError.hidden = false;
+      let submitBtn = document.getElementById('reset-submit');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+      }
+    }
+
+    resetForm.addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      let submitBtn = document.getElementById('reset-submit');
+      let newPassword = document.getElementById('new-password').value;
+      let confirmPassword = document.getElementById('confirm-password').value;
+
+      resetError.hidden = true;
+      confirmError.hidden = true;
+
+      let resetPwError = passwordError(newPassword);
+      if (resetPwError) {
+        resetError.textContent = resetPwError;
+        resetError.hidden = false;
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        confirmError.textContent = t('errors.passwordsDontMatch');
+        confirmError.hidden = false;
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = t('newPassword.submitBusy');
+
+      try {
+        let response = await fetch('/api/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: resetToken, password: newPassword })
+        });
+
+        let data = await response.json();
+
+        if (!response.ok) {
+          resetError.textContent = data.error || 'Could not reset password.';
+          resetError.hidden = false;
+          submitBtn.disabled = false;
+          submitBtn.textContent = t('newPassword.submit');
+          return;
+        }
+
+        window.location.href = 'login.html';
+      } catch (err) {
+        resetError.textContent = t('errors.couldNotReachServer');
+        resetError.hidden = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = t('newPassword.submit');
       }
     });
   }
@@ -1193,8 +1389,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   if (needsFaultData) {
     fetchFaults()
-      .then(function () {
+      .then(async function () {
         renderFaultLog();
+        await loadConversationHistory();
         seedChatFromReport();
       })
       .catch(function (err) {

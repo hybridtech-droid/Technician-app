@@ -9,20 +9,20 @@
 </head>
 <body>
 
-<header>
-    <nav>
-        <span class="brand">Tervexa</span>
-        <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">☰</button>
-        <div class="nav-links">
-          <a href="index.html">Home</a>
-          <a href="about.html">About</a>
-          <a href="fault-report.html">Report a fault</a>
-          <a href="fault-log.html">Fault log</a>
-          <a href="chat.html">Ask AI</a>
-          <a href="login.html">Login</a>
-          <a href="signup.html">Sign up</a>
-        </div>
-        <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language">
+    <header>
+        <nav>
+            <span class="brand">Tervexa</span>
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">☰</button>
+            <div class="nav-links">
+              <a href="index.html" data-i18n="nav.home">Home</a>
+              <a href="about.html" data-i18n="nav.about">About</a>
+              <a href="fault-report.html" data-i18n="nav.reportFault">Report a fault</a>
+              <a href="fault-log.html" data-i18n="nav.faultLog">Fault log</a>
+              <a href="chat.html" data-i18n="nav.askAI">Ask AI</a>
+              <a href="login.html" data-i18n="nav.login">Login</a>
+              <a href="signup.html" data-i18n="nav.signup">Sign up</a>
+            </div>
+            <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language">
                 <option value="en">English</option>
                 <option value="fr">Français</option>
                 <option value="es">Español</option>
@@ -36,102 +36,93 @@
                 <option value="ja">日本語</option>
                 <option value="ko">한국어</option>
                 <option value="sv">Svenska</option>
-        </select>
-    </nav>
-</header>
+            </select>
+        </nav>
+    </header>
 
     <main>
 
-        <div class="hero">
-            <h1> AI-powered Technical Intelligence Platform</h1>
-            <p>Field Service Engineers, Technicians, Application Specialists, Technical Managers and Other Technical Professionals.</p>
-            <div class="hero-buttons">
-                <a href="signup.html" class="btn-primary">Get started</a>
-                <a href="about.html" class="btn-secondary">Learn more</a>
-            </div>
+      <div class="hero">
+        <h1 data-i18n="home.heroHeading">AI-powered Technical Intelligence Platform</h1>
+        <p data-i18n="home.heroSubtext">Field Service Engineers, Technicians, Application Specialists, Technical Managers and Other Technical Professionals.</p>
+        <div class="hero-buttons">
+          <a href="signup.html" class="btn-primary" data-i18n="home.getStarted">Get started</a>
+          <a href="about.html" class="btn-secondary" data-i18n="home.learnMore">Learn more</a>
         </div>
+      </div>
 
-        <div class="features">
+      <div class="features">
+        <div class="feature-card">
+          <h3 data-i18n="home.feature.aiAssist.title">AI Assist</h3>
+          <p data-i18n="home.feature.aiAssist.body">Describe your issue or upload a photo. The AI analyzes it instantly and returns step-by-step guide.</p>
+        </div>
+        <div class="feature-card">
+          <h3 data-i18n="home.feature.imageAnalysis.title">Real-time image analysis</h3>
+          <p data-i18n="home.feature.imageAnalysis.body">Point your camera at faulty equipment. The AI reads the image and identifies likely causes and solutions in seconds.</p>
+        </div>
+        <div class="feature-card">
+          <h3 data-i18n="home.feature.spareParts.title">Spare parts links</h3>
+          <p data-i18n="home.feature.spareParts.body">Every diagnosis includes direct links to verified spare parts dealers so Engineers and Technicians can order what they need immediately.</p>
+        </div>
+        <div class="feature-card feature-card--roles">
+          <h3 data-i18n="home.feature.roles.title">Role-based dashboards</h3>
+          <p data-i18n="home.feature.roles.body">Everyone sees exactly what their job needs - nothing more.</p>
+          <ul class="role-list">
+            <li><strong data-i18n="home.roles.technicians.name">Technicians</strong> <span data-i18n="home.roles.technicians.desc">— their own fault reports and diagnosis history.</span></li>
+            <li><strong data-i18n="home.roles.specialists.name">Field Application Specialists</strong> <span data-i18n="home.roles.specialists.desc">- application support and training records for their assigned sites, with escalation history.</span></li>
+            <li><strong data-i18n="home.roles.engineers.name">Engineers</strong> <span data-i18n="home.roles.engineers.desc">— every report across all sites, with status, severity and resolution history.</span></li>
+            <li><strong data-i18n="home.roles.supervisors.name">Supervisors</strong> <span data-i18n="home.roles.supervisors.desc">— faults across their sites, with progress tracking.</span></li>
+            <li><strong data-i18n="home.roles.managers.name">Maintenance Managers</strong> <span data-i18n="home.roles.managers.desc">— organization-wide trends for maintenance planning.</span></li>
+            <li><strong data-i18n="home.roles.admins.name">Administrators</strong> <span data-i18n="home.roles.admins.desc">— user accounts, roles and permissions.</span></li>
+          </ul>
+        </div>
+        <div class="feature-card">
+          <h3 data-i18n="home.feature.multiPlatform.title">Multi-platform</h3>
+          <p data-i18n="home.feature.multiPlatform.body">Tervexa works on any device with a web browser, including smartphones, tablets and desktop computers.</p>
+        </div>
+        <div class="feature-card">
+          <h3 data-i18n="home.feature.multiLanguage.title">Multi-language support</h3>
+          <p data-i18n="home.feature.multiLanguage.body">Tervexa speaks your language. Available in English, French, Arabic, Portuguese and more — technicians and engineers work in their preferred language with AI diagnosis responses delivered in the same language.</p>
+        </div>
+        <div class="feature-card">
+          <h3 data-i18n="home.feature.offline.title">Offline fault logging</h3>
+          <p data-i18n="home.feature.offline.body">Technicians can log faults even without internet access. The app stores the data locally and syncs it when connectivity is restored.</p>
+        </div>
+        <div class="feature-card">
+          <h3 data-i18n="home.feature.builtForField.title">Built for field service</h3>
+          <p data-i18n="home.feature.builtForField.body">Integrated with local spare parts suppliers. Works on low bandwidth connections. Designed for real field conditions.</p>
+        </div>
+      </div>
 
-            <div class="feature-card">
-                <h3>AI Assist</h3>
-                <p>Describe your issue or upload a photo. The AI analyzes it instantly and returns step-by-step guide.</p>
-            </div>
+      <div class="cta-section">
+        <div>
+          <h2 data-i18n="home.cta.heading">Ready to get started?</h2>
+          <p data-i18n="home.cta.body">Join thousands of field technicians and engineers who use Tervexa to diagnose faults faster and keep equipment running.</p>
+        </div>
+        <a href="signup.html" class="btn-white" data-i18n="home.cta.signUpNow">Sign up now</a>
+      </div>
 
-            <div class="feature-card">
-                <h3>Real-time image analysis</h3>
-                <p>Point your camera at faulty equipment. The AI reads the image and identifies likely causes and solutions in seconds.</p>
-            </div>
-
-            <div class="feature-card">
-                <h3>Spare parts links</h3>
-                <p>Every diagnosis includes direct links to verified spare parts dealers so Engineers and Technicians can order what they need immediately.</p>
-            </div>
-
-            <div class="feature-card feature-card--roles">
-                <h3>Role-based dashboards</h3>
-                <p>Everyone sees exactly what their job needs - nothing more.</p>  
-                <ul class="role-list">
-                    <li><strong>Technicians</strong> — their own fault reports and diagnosis history.</li>
-                    <li><strong>Field Application Specialists</strong> - application support and training records for their assigned sites, with escalation history.</li>
-                    <li><strong>Engineers</strong> — every report across all sites, with status, severity and resolution history.</li>
-                    <li><strong>Supervisors</strong> — faults across their sites, with progress tracking.</li>
-                    <li><strong>Maintenance Managers</strong> — organization-wide trends for maintenance planning.</li>
-                    <li><strong>Administrators</strong> — user accounts, roles and permissions.</li>
-                </ul>
-            </div>
-
-            <div class="feature-card">
-                <h3>Multi-platform</h3>
-                <p>Tervexa works on any device with a web browser, including smartphones, tablets and desktop computers.</p>
-            </div>
-
-            <div class="feature-card">
-                <h3>Multi-language support</h3>
-                <p>Tervexa speaks your language. Available in English, French, Arabic, Portuguese and more — technicians and engineers work in their preferred language with AI diagnosis responses delivered in the same language.</p>
-            </div>
-
-            <div class="feature-card">
-                <h3>Offline fault logging</h3>
-                <p>Technicians can log faults even without internet access. The app stores the data locally and syncs it when connectivity is restored.</p>
-            </div>
-            
-            <div class="feature-card">
-                <h3>Built for field service</h3>
-                <p>Integrated with local spare parts suppliers. Works on low bandwidth connections. Designed for real field conditions.</p>
-            </div>
-
-        </div>    
-
-            <div class="cta-section">
-                <div>
-                  <h2>Ready to get started?</h2>
-                  <p>Join thousands of field technicians and engineers who use Tervexa to diagnose faults faster and keep equipment running.</p>
-                </div>    
-                <a href="signup.html" class="btn-white">Sign up now</a>
-            </div>
-
-            <div class="fields-section">
-                <h2>Engineering fields covered</h2>
-                <div class="fields-grid">
-                    <span class="field-tag">Biomedical engineering</span>
-                    <span class="field-tag">Electrical engineering</span>
-                    <span class="field-tag">Software and control engineering</span>
-                    <span class="field-tag">Structural and civil engineering</span>
-                    <span class="field-tag">Mechanical engineering</span>
-                    <span class="field-tag">Electronics and instrumentation</span>
-                    <span class="field-tag">HVAC and refrigeration</span>
-                    <span class="field-tag">Other engineering fields</span>
-                </div>
-            </div>
-
+      <div class="field-section">
+        <h2 data-i18n="home.fields.heading">Engineering fields covered</h2>
+        <div class="field-grid">
+          <span class="field-tag" data-i18n="home.fields.biomedical">Biomedical engineering</span>
+          <span class="field-tag" data-i18n="home.fields.electrical">Electrical engineering</span>
+          <span class="field-tag" data-i18n="home.fields.software">Software and control engineering</span>
+          <span class="field-tag" data-i18n="home.fields.structural">Structural and civil engineering</span>
+          <span class="field-tag" data-i18n="home.fields.mechanical">Mechanical engineering</span>
+          <span class="field-tag" data-i18n="home.fields.electronics">Electronics and instrumentation</span>
+          <span class="field-tag" data-i18n="home.fields.hvac">HVAC and refrigeration</span>
+          <span class="field-tag" data-i18n="home.fields.other">Other engineering fields</span>
+        </div>
+      </div>
 
     </main>
 
     <footer>
-        <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html">Privacy</a><span class="footer-sep">|</span><a href="terms.html">Terms</a><span class="footer-sep">|</span>Security<span class="footer-sep">|</span>Help<span class="footer-sep">|</span>v1.0.0</p>
+      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html" data-i18n="footer.privacy">Privacy</a><span class="footer-sep">|</span><a href="terms.html" data-i18n="footer.terms">Terms</a><span class="footer-sep">|</span><span data-i18n="footer.security">Security</span><span class="footer-sep">|</span><span data-i18n="footer.help">Help</span><span class="footer-sep">|</span>v1.0.0</p>
     </footer>
 
+<script src="js/i18n.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

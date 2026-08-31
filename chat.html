@@ -9,21 +9,21 @@
 </head>
 <body>
 
-  <header>
-    <nav>
-        <span class="brand">Tervexa</span>
-        <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">☰</button>
-        <div class="nav-links">
-          <a href="index.html">Home</a>
-          <a href="about.html">About</a>
-          <a href="fault-report.html">Report a fault</a>
-          <a href="fault-log.html">Fault log</a>
-          <a href="chat.html">Ask AI</a>
-          <a href="login.html">Login</a>
-          <a href="signup.html">Sign up</a>
-        </div>
-        <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language">
-              <option value="en">English</option>
+    <header>
+        <nav>
+            <span class="brand">Tervexa</span>
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">☰</button>
+            <div class="nav-links">
+              <a href="index.html" data-i18n="nav.home">Home</a>
+              <a href="about.html" data-i18n="nav.about">About</a>
+              <a href="fault-report.html" data-i18n="nav.reportFault">Report a fault</a>
+              <a href="fault-log.html" data-i18n="nav.faultLog">Fault log</a>
+              <a href="chat.html" data-i18n="nav.askAI">Ask AI</a>
+              <a href="login.html" data-i18n="nav.login">Login</a>
+              <a href="signup.html" data-i18n="nav.signup">Sign up</a>
+            </div>
+            <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language">
+                <option value="en">English</option>
                 <option value="fr">Français</option>
                 <option value="es">Español</option>
                 <option value="de">Deutsch</option>
@@ -36,34 +36,35 @@
                 <option value="ja">日本語</option>
                 <option value="ko">한국어</option>
                 <option value="sv">Svenska</option>
-        </select>
-    </nav>
-  </header>
+            </select>
+        </nav>
+    </header>
 
-  <main>
-    <div class="page-card">
+    <main>
+      <div class="page-card">
 
-      <div class="page-card-header">
-        <h1>Ask Tervexa</h1>
-        <p>Ask a quick question about equipment, installation, after-sales or an application concern. For anything you need on record, submit a report instead.</p>
+        <div class="page-card-header">
+          <h1 data-i18n="chat.heading">Ask Tervexa</h1>
+          <p data-i18n="chat.subtitle">Ask a quick question about equipment, installation, after-sales or an application concern. For anything you need on record, submit a report instead.</p>
+        </div>
+
+        <div class="chat-window" id="chat-window">
+          <div class="chat-message chat-message--assistant" data-i18n="chat.welcomeMessage">Ask me anything about the equipment you are working on. I can help with diagnosis, installation steps, after-sales questions or application and process concerns.</div>
+        </div>
+
+        <form id="chat-form" class="chat-form">
+          <textarea id="chat-input" rows="2" placeholder="Type your question..." data-i18n-placeholder="chat.inputPlaceholder"></textarea>
+          <button id="chat-send" type="submit" data-i18n="chat.send">Send</button>
+        </form>
+
       </div>
-
-      <div class="chat-window" id="chat-window">
-        <div class="chat-message chat-message--assistant">Ask me anything about the equipment you are working on. I can help with diagnosis, installation steps, after-sales questions or application and process concerns.</div>
-      </div>
-
-      <form id="chat-form" class="chat-form">
-        <textarea id="chat-input" name="chat-input" rows="2"
-          placeholder="Type your question..." required></textarea>
-        <button type="submit" id="chat-send">Send</button>
-      </form>
-
-    </div>
-  </main>
+    </main>
 
     <footer>
-      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html">Privacy</a><span class="footer-sep">|</span><a href="terms.html">Terms</a><span class="footer-sep">|</span>Security<span class="footer-sep">|</span>Help<span class="footer-sep">|</span>v1.0.0</p>
+      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html" data-i18n="footer.privacy">Privacy</a><span class="footer-sep">|</span><a href="terms.html" data-i18n="footer.terms">Terms</a><span class="footer-sep">|</span><span data-i18n="footer.security">Security</span><span class="footer-sep">|</span><span data-i18n="footer.help">Help</span><span class="footer-sep">|</span>v1.0.0</p>
     </footer>
+
+<script src="js/i18n.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

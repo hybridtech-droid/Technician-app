@@ -11,18 +11,18 @@
 
     <header>
         <nav>
-           <span class="brand">Tervexa</span>
-           <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">☰</button>
-           <div class="nav-links">
-             <a href="index.html">Home</a>
-             <a href="about.html">about</a>
-             <a href="fault-report.html">Report a fault</a>
-             <a href="fault-log.html">Fault log</a>
-             <a href="chat.html">Ask AI</a>
-             <a href="login.html">Login</a>
-             <a href="signup.html">Sign up</a>
+            <span class="brand">Tervexa</span>
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">☰</button>
+            <div class="nav-links">
+              <a href="index.html" data-i18n="nav.home">Home</a>
+              <a href="about.html" data-i18n="nav.about">About</a>
+              <a href="fault-report.html" data-i18n="nav.reportFault">Report a fault</a>
+              <a href="fault-log.html" data-i18n="nav.faultLog">Fault log</a>
+              <a href="chat.html" data-i18n="nav.askAI">Ask AI</a>
+              <a href="login.html" data-i18n="nav.login">Login</a>
+              <a href="signup.html" data-i18n="nav.signup">Sign up</a>
             </div>
-           <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language">
+            <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language">
                 <option value="en">English</option>
                 <option value="fr">Français</option>
                 <option value="es">Español</option>
@@ -37,24 +37,20 @@
                 <option value="ko">한국어</option>
                 <option value="sv">Svenska</option>
             </select>
-        </nav> 
+        </nav>
     </header>
 
     <main>
 
-    <h1>About this app</h1>
-    <img src="images/equipment.jpg"
-         alt="Engineer inspecting industrial equipment"
-         width="500">
-    
-    <p>Tervexa is built for field technicians and engineers who need fast, accurate fault diagnosis on the job.</p>
+      <h1 data-i18n="about.heading">About this app</h1>
+      <img src="images/equipment.jpg" alt="Engineer inspecting industrial equipment" data-i18n-alt="about.imgAlt" width="500">
 
-    <p>Using AI, the app analyses fault descriptions and images submitted by technicians and returns step-by-step troubleshooting guidance in real time.</p>
+      <p data-i18n="about.intro1">Tervexa is built for field technicians and engineers who need fast, accurate fault diagnosis on the job.</p>
+      <p data-i18n="about.intro2">Using AI, the app analyses fault descriptions and images submitted by technicians and returns step-by-step troubleshooting guidance in real time.</p>
 
-    <h2>Multi-language Support</h2>
-    <p>Tervexa is designed for a global workforce. The platform currently supports the following languages with more being added regularly:</p>
-    
-    <ul>
+      <h2 data-i18n="about.languagesHeading">Multi-language Support</h2>
+      <p data-i18n="about.languagesIntro">Tervexa is designed for a global workforce. The platform currently supports the following languages with more being added regularly:</p>
+      <ul>
         <li>English</li>
         <li>French - Français</li>
         <li>Spanish - Español</li>
@@ -68,74 +64,50 @@
         <li>Japanese - 日本語</li>
         <li>Korean - 한국어</li>
         <li>Swedish - Svenska</li>
-    </ul>
+      </ul>
+      <p data-i18n="about.languagesOutro">The AI-powered Technical intelligence engine responds in the same language the user uses - no translation required. Field engineers across Africa, Europe, Middle East, Asia and beyond can use Tervexa in their native language.</p>
 
-    <p>The AI-powered Technical intelligence engine responds in the same language the user uses - no translation required. Field engineers across Africa, Europe, Middle East, Asia and beyond can use Tervexa in their native language.</p>
+      <h2 data-i18n="about.whoHeading">Who it is built for</h2>
+      <ul>
+        <li data-i18n="about.who1">Field technicians handling installations and repairs</li>
+        <li data-i18n="about.who2">Biomedical engineers maintaining medical equipment</li>
+        <li data-i18n="about.who3">Software and control engineer</li>
+        <li data-i18n="about.who4">Structural and civil engineers</li>
+        <li data-i18n="about.who5">Electrical and mechanical engineer</li>
+        <li data-i18n="about.who6">HVAC and instrumentation specialists</li>
+        <li data-i18n="about.who7">site supervisors managing multiple fault reports</li>
+      </ul>
 
-    <h2>Who it is built for</h2>
-    <ul>
-        <li>Field technicians handling installations and repairs</li>
-        <li>Biomedical engineers maintaining medical equipment</li>
-        <li>Software and control engineer</li>
-        <li>Structural and civil engineers</li>
-        <li>Electrical and mechanical engineer</li>
-        <li>HVAC and instrumentation specialists</li>
-        <li>site supervisors managing multiple fault reports</li>
-    </ul>
+      <h2 data-i18n="about.whereHeading">Where we operate</h2>
+      <p data-i18n="about.where1">Tervexa is currently operating in Nigeria with active expansion into West Africa underway. Our roadmap includes plans to expand to other regions and globally.</p>
+      <p data-i18n="about.where2">Built with global architecture, multiple language support, local and international spare parts integration and region-specific compliance frameworks are core to our platform design.</p>
 
-    <h2>Where we operate</h2>
-    <p>Tervexa is currently operating in Nigeria with active expansion into West Africa underway. Our roadmap includes plans to expand to other regions and globally.</p>
+      <h2 data-i18n="about.sparePartsHeading">Spare parts and components</h2>
+      <p data-i18n="about.sparePartsIntro">Tervexa provides direct links to leading spare parts and component suppliers to help technicians source what they need quickly. The following suppliers are recommended based on their global reach and product range.</p>
+      <ul>
+        <li><a href="https://ng.rs-online.com" target="_blank">RS Components</a> <span data-i18n="about.supplierRs">— industrial and electronic components, global supplier</span></li>
+        <li><a href="https://www.farnell.com" target="_blank">Farnell</a> <span data-i18n="about.supplierFarnell">— electronic components, worldwide delivery</span></li>
+        <li><a href="https://www.mouser.com" target="_blank">Mouser Electronics</a> <span data-i18n="about.supplierMouser">— authorised distributor of electronic components</span></li>
+        <li><a href="https://www.digikey.com" target="_blank">Digi-Key Electronics</a> <span data-i18n="about.supplierDigikey">— largest online component catalogue globally</span></li>
+      </ul>
+      <p data-i18n="about.sparePartsDisclaimer">Tervexa is not affiliated with or endorsed by any of the above suppliers. Links are provided for reference only.</p>
 
-    <p>Built with global architecture, multiple language support, local and international spare parts integration and region-specific compliance frameworks are core to our platform design.</p>
-    
-    <h2>Spare parts and components</h2>
-    <p>Tervexa provides direct links to leading spare parts and component suppliers to help technicians source what 
-    they need quickly. The following suppliers are recommended based on their global reach and product range.</p>
+      <div class="feature-card">
+        <h3 data-i18n="about.offlineTitle">Works offline</h3>
+        <p data-i18n="about.offlineBody">No internet? No problem. Technicians can log fault reports, upload photos and record observations without any connection. The app stores everything locally and syncs automatically the moment connectivity is restored — no data is ever lost.</p>
+      </div>
 
-<ul>
-  <li>
-    <a href="https://ng.rs-online.com" target="_blank">
-      RS Components
-    </a> 
-    — industrial and electronic components, global supplier
-  </li>
-  <li>
-    <a href="https://www.farnell.com" target="_blank">
-      Farnell
-    </a> 
-    — electronic components, worldwide delivery
-  </li>
-  <li>
-    <a href="https://www.mouser.com" target="_blank">
-      Mouser Electronics
-    </a> 
-    — authorised distributor of electronic components
-  </li>
-  <li>
-    <a href="https://www.digikey.com" target="_blank">
-      Digi-Key Electronics
-    </a> 
-    — largest online component catalogue globally
-  </li>
-</ul>
-
-<p>Tervexa is not affiliated with or endorsed by 
-any of the above suppliers. Links are provided for 
-reference only.</p>
-
-<div class="feature-card">
-    <h3>Works offline</h3>
-    <p>No internet? No problem. Technicians can log fault reports, upload photos and record observations without any connection. The app stores everything locally and syncs automatically the moment connectivity is restored — no data is ever lost.</p>
-</div>
-
-    <h2>Contact</h2>
-    <p>For support or partnership enquiries reach us at:</p>
-    <a href="mailto:luckyvictor3@gmail.com">luckyvictor3@gmail.com</a>
+      <h2 data-i18n="about.contactHeading">Contact</h2>
+      <p data-i18n="about.contactIntro">For support or partnership enquiries reach us at:</p>
+      <a href="mailto:luckyvictor3@gmail.com">luckyvictor3@gmail.com</a>
 
     </main>
+
+    <footer>
+      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html" data-i18n="footer.privacy">Privacy</a><span class="footer-sep">|</span><a href="terms.html" data-i18n="footer.terms">Terms</a><span class="footer-sep">|</span><span data-i18n="footer.security">Security</span><span class="footer-sep">|</span><span data-i18n="footer.help">Help</span><span class="footer-sep">|</span>v1.0.0</p>
+    </footer>
+
+<script src="js/i18n.js"></script>
 <script src="js/main.js"></script>
 </body>
-    <footer>
-      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html">Privacy</a><span class="footer-sep">|</span><a href="terms.html">Terms</a><span class="footer-sep">|</span>Security<span class="footer-sep">|</span>Help<span class="footer-sep">|</span>v1.0.0</p>
-    </footer>
 </html>

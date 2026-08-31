@@ -14,13 +14,13 @@
         <span class="brand">Tervexa</span>
         <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">☰</button>
         <div class="nav-links">
-          <a href="index.html">Home</a>
-          <a href="about.html">About</a>
-          <a href="fault-report.html">Report a fault</a>
-          <a href="fault-log.html">Fault log</a>
-          <a href="chat.html">Ask AI</a>
-          <a href="login.html">Login</a>
-          <a href="signup.html">Sign up</a>
+          <a href="index.html" data-i18n="nav.home">Home</a>
+          <a href="about.html" data-i18n="nav.about">About</a>
+          <a href="fault-report.html" data-i18n="nav.reportFault">Report a fault</a>
+          <a href="fault-log.html" data-i18n="nav.faultLog">Fault log</a>
+          <a href="chat.html" data-i18n="nav.askAI">Ask AI</a>
+          <a href="login.html" data-i18n="nav.login">Login</a>
+          <a href="signup.html" data-i18n="nav.signup">Sign up</a>
         </div>
         <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language">
                 <option value="en">English</option>
@@ -42,56 +42,56 @@
 
 <main>
   <div class="auth-card">
-    <h1>Create your Tervexa account</h1>
-    <p>Already have an account? <a href="login.html">Log in here</a>.</p>
+    <h1 data-i18n="signup.heading">Create your Tervexa account</h1>
+    <p><span data-i18n="auth.alreadyHaveAccount">Already have an account?</span> <a href="login.html" data-i18n="auth.logInHere">Log in here</a>.</p>
 
     <form id="signup-form">
 
-       <label for="full-name">Full name:</label>
+       <label for="full-name" data-i18n="signup.fullNameLabel">Full name:</label>
        <input type="text" id="full-name" name="full-name"
-               placeholder="Enter your full name"
+               placeholder="Enter your full name" data-i18n-placeholder="signup.fullNamePlaceholder"
                autocomplete="name"
                required>
 
-       <label for="phone">Phone number</label>
+       <label for="phone" data-i18n="signup.phoneLabel">Phone number</label>
        <input type="tel" id="phone" name="phone"
-               placeholder="Enter your phone number"
+               placeholder="Enter your phone number" data-i18n-placeholder="signup.phonePlaceholder"
                autocomplete="tel"
                required>
 
-       <label for="role">Your role</label>
+       <label for="role" data-i18n="signup.roleLabel">Your role</label>
       <select id="role" name="role" required>
-           <option value="">-- Select your role --</option>
-           <option value="technician">Field technician</option>
-           <option value="field-application-specialist">Field application specialist</option>
-           <option value="engineer">Engineer</option>
-           <option value="supervisor">Site supervisor</option>
-           <option value="manager">Maintenance manager</option>
-           <option value="admin">Administrator</option>
+           <option value="" data-i18n="signup.roleSelectDefault">-- Select your role --</option>
+           <option value="technician" data-i18n="role.technician">Field technician</option>
+           <option value="field-application-specialist" data-i18n="role.fieldApplicationSpecialist">Field application specialist</option>
+           <option value="engineer" data-i18n="role.engineer">Engineer</option>
+           <option value="supervisor" data-i18n="role.supervisor">Site supervisor</option>
+           <option value="manager" data-i18n="role.manager">Maintenance manager</option>
+           <option value="admin" data-i18n="role.admin">Administrator</option>
        </select>
 
-       <label for="email">Email</label>
+       <label for="email" data-i18n="signup.emailLabel">Email</label>
        <input type="email" id="email" name="email"
-               placeholder="Enter your email address"
+               placeholder="Enter your email address" data-i18n-placeholder="signup.emailPlaceholder"
                autocomplete="email"
                required>
 
-        <label for="company">Company or organisation or self-employed</label>
+        <label for="company" data-i18n="signup.companyLabel">Company or organisation or self-employed</label>
         <input type="text" id="company" name="company"
-               placeholder="Enter your company or organisation name or self-employed status"
+               placeholder="Enter your company or organisation name or self-employed status" data-i18n-placeholder="signup.companyPlaceholder"
                autocomplete="organization"
                required>
 
-        <label for="password">Create password</label>
+        <label for="password" data-i18n="signup.passwordLabel">Create password</label>
         <input type="password" id="password" name="password"
-               placeholder="Minimum 8 characters, include letters and numbers"
+               placeholder="Minimum 8 characters, include letters and numbers" data-i18n-placeholder="signup.passwordPlaceholder"
                autocomplete="new-password"
                minlength="8"
                required>
 
-        <label for="confirm-password">Confirm password</label>
+        <label for="confirm-password" data-i18n="signup.confirmPasswordLabel">Confirm password</label>
         <input type="password" id="confirm-password" name="confirm-password"
-               placeholder="Re-enter your password"
+               placeholder="Re-enter your password" data-i18n-placeholder="signup.confirmPasswordPlaceholder"
                autocomplete="new-password"
                minlength="8"
                required>
@@ -99,28 +99,31 @@
 
         <label class="form-legal">
             <input type="checkbox" id="terms" name="terms" required>
-            <span>I have read and agree to the <a href="terms.html" target="_blank" class="legal-highlight">Terms and Conditions</a> and
-                <a href="privacy.html" target="_blank" class="legal-highlight">Privacy Policy</a>.
+            <span><span data-i18n="signup.termsPrefix">I have read and agree to the</span>
+                <a href="terms.html" target="_blank" class="legal-highlight" data-i18n="signup.termsLink">Terms and Conditions</a>
+                <span data-i18n="signup.termsAnd">and</span>
+                <a href="privacy.html" target="_blank" class="legal-highlight" data-i18n="signup.privacyLink">Privacy Policy</a><span data-i18n="signup.termsSuffix">.</span>
             </span>
         </label>
 
         <label class="form-legal">
             <input type="checkbox" id="disclaimer" name="disclaimer" required>
-            <span>I understand that AI-generated diagnoses and recommendation are suggestions only and must be verified by a qualified engineer or specialist before any action is taken.</span>
+            <span data-i18n="signup.disclaimerText">I understand that AI-generated diagnoses and recommendation are suggestions only and must be verified by a qualified engineer or specialist before any action is taken.</span>
         </label>
 
         <span id="signup-error" class="field-error" hidden></span>
 
-        <button type="submit" id="signup-submit">Create account</button>
+        <button type="submit" id="signup-submit" data-i18n="signup.submit">Create account</button>
 
     </form>
    </div>
   </main>
 
   <footer>
-    <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span>Security<span class="footer-sep">|</span>Help<span class="footer-sep">|</span>v1.0.0</p>
+    <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><span data-i18n="footer.security">Security</span><span class="footer-sep">|</span><span data-i18n="footer.help">Help</span><span class="footer-sep">|</span>v1.0.0</p>
   </footer>
 
+<script src="js/i18n.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

@@ -9,21 +9,21 @@
 </head>
 <body>
 
-  <header>
-    <nav>
-        <span class="brand">Tervexa</span>
-        <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">☰</button>
-        <div class="nav-links">
-          <a href="index.html">Home</a>
-          <a href="about.html">About</a>
-          <a href="fault-report.html">Report a fault</a>
-          <a href="fault-log.html">Fault log</a>
-          <a href="chat.html">Ask AI</a>
-          <a href="login.html">Login</a>
-          <a href="signup.html">Sign up</a>
-        </div>
-        <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language">
-              <option value="en">English</option>
+    <header>
+        <nav>
+            <span class="brand">Tervexa</span>
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">☰</button>
+            <div class="nav-links">
+              <a href="index.html" data-i18n="nav.home">Home</a>
+              <a href="about.html" data-i18n="nav.about">About</a>
+              <a href="fault-report.html" data-i18n="nav.reportFault">Report a fault</a>
+              <a href="fault-log.html" data-i18n="nav.faultLog">Fault log</a>
+              <a href="chat.html" data-i18n="nav.askAI">Ask AI</a>
+              <a href="login.html" data-i18n="nav.login">Login</a>
+              <a href="signup.html" data-i18n="nav.signup">Sign up</a>
+            </div>
+            <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language">
+                <option value="en">English</option>
                 <option value="fr">Français</option>
                 <option value="es">Español</option>
                 <option value="de">Deutsch</option>
@@ -36,135 +36,131 @@
                 <option value="ja">日本語</option>
                 <option value="ko">한국어</option>
                 <option value="sv">Svenska</option>
+            </select>
+        </nav>
+    </header>
+
+    <main>
+
+      <h1 data-i18n="log.heading">Report log</h1>
+      <p data-i18n="log.intro">All submitted reports are listed below - faults, installation, after-sales and application support. Click any row to view and full record</p>
+
+      <h2 data-i18n="log.summaryHeading">Summary</h2>
+      <p><span data-i18n="log.totalReports">Total reports:</span> <span id="count-total">0</span></p>
+      <p><span data-i18n="log.openCount">Open:</span> <span id="count-open">0</span></p>
+      <p><span data-i18n="log.inProgressCount">In progress:</span> <span id="count-progress">0</span></p>
+      <p><span data-i18n="log.resolvedCount">Resolved:</span> <span id="count-resolved">0</span></p>
+
+      <div id="root-cause-summary" hidden>
+        <h2 data-i18n="log.rootCausesHeading">Root causes</h2>
+        <label for="cause-filter" data-i18n="log.showRootCausesFor">Show root causes for</label>
+        <select id="cause-filter" class="cause-filter">
+          <option value="all" data-i18n="requestType.allTypes">All request types</option>
+          <option value="fault" data-i18n="requestType.faults">Faults</option>
+          <option value="installation" data-i18n="requestType.installations">Installations</option>
+          <option value="after-sales" data-i18n="requestType.afterSales">After-sales</option>
+          <option value="application" data-i18n="requestType.applicationSupport">Application support</option>
         </select>
-    </nav>
-  </header>
+        <ul class="cause-list" id="cause-list"></ul>
+      </div>
 
-  <main>
+      <div class="table-filters">
+        <label for="filter-status" data-i18n="log.filterStatusLabel">Status</label>
+        <select id="filter-status">
+          <option value="all" data-i18n="status.all">All</option>
+          <option value="Open" data-i18n="status.open">Open</option>
+          <option value="In progress" data-i18n="status.inProgress">In progress</option>
+          <option value="Resolved" data-i18n="status.resolved">Resolved</option>
+        </select>
 
-    <h1>Report log</h1>
-    <p>All submitted reports are listed below - faults, installation, after-sales and application support. Click any row to view and full record</p>
+        <label for="filter-type" data-i18n="log.filterRequestTypeLabel">Request type</label>
+        <select id="filter-type">
+          <option value="all" data-i18n="requestType.allTypes">All request types</option>
+          <option value="fault" data-i18n="requestType.faults">Faults</option>
+          <option value="installation" data-i18n="requestType.installations">Installations</option>
+          <option value="after-sales" data-i18n="requestType.afterSales">After-sales</option>
+          <option value="application" data-i18n="requestType.applicationSupport">Application support</option>
+        </select>
+      </div>
 
-    <h2>Summary</h2>
-    <p>Total reports: <span id="count-total">0</span></p>
-    <p>Open: <span id="count-open">0</span></p>
-    <p>In progress: <span id="count-progress">0</span></p>
-    <p>Resolved: <span id="count-resolved">0</span></p>
-    <div id="root-cause-summary" hidden>
-      <h2>Root causes</h2>
-      <label for="cause-filter">Show root causes for</label>
-      <select id="cause-filter" class="cause-filter">
-        <option value="all">All request types</option>
-        <option value="fault">Faults</option>
-        <option value="installation">Installations</option>
-        <option value="after-sales">After-sales</option>
-        <option value="application">Application support</option>
-      </select>
-      <ul class="cause-list" id="cause-list"></ul>
-    </div>
-
-    <div class="table-filters">
-      <label for="filter-status">Status</label>
-      <select id="filter-status">
-        <option value="all">All</option>
-        <option value="Open">Open</option>
-        <option value="In progress">In progress</option>
-        <option value="Resolved">Resolved</option>
-      </select>
-
-      <label for="filter-type">Request type</label>
-      <select id="filter-type">
-        <option value="all">All</option>
-        <option value="fault">Faults</option>
-        <option value="installation">Installations</option>
-        <option value="after-sales">After-sales</option>
-        <option value="application">Application support</option>
-      </select>
-    </div>
-    
-    <div class="table-wrap">  
-    <table>
-        <thead>
+      <div class="table-wrap">
+        <table>
+          <thead>
             <tr>
-                <th>Report ID</th>
-                <th>Reported by</th>
-                <th>Equipment ID</th>
-                <th>Location</th>
-                <th>Request type</th>
-                <th>Severity</th>
-                <th>Date</th>
-                <th>Status</th>
+              <th data-i18n="log.table.reportId">Report ID</th>
+              <th data-i18n="log.table.reportedBy">Reported by</th>
+              <th data-i18n="log.table.equipmentId">Equipment ID</th>
+              <th data-i18n="log.table.location">Location</th>
+              <th data-i18n="log.table.requestType">Request type</th>
+              <th data-i18n="log.table.severity">Severity</th>
+              <th data-i18n="log.table.date">Date</th>
+              <th data-i18n="log.table.status">Status</th>
             </tr>
-        </thead>
-        <tbody id="fault-log-body">   
-        </tbody>
-    </table>
-    </div>
-    
-    <p id="no-faults" class="no-faults">No report have been submitted yet.</p>
-
-    <div id="fault-detail" class="fault-detail" hidden>
-      <h2 id="detail-title">Fault detail</h2>
-
-      <p class="detail-meta" id="detail-meta"></p>
-
-      <p class="detail-extras" id="detail-extras"></p>
-
-      <h3>Reported observations</h3>
-      <p id="detail-description"></p>
-
-      <h3>AI diagnosis</h3>
-      <p id="detail-diagnosis"></p>
-
-      <div id="resolution-display" hidden>
-        <h3>How  it was resolved</h3>
-        <p class="detail-extras" id="resolution-meta"></p>
-        <p id="resolution-text"></p>
+          </thead>
+          <tbody id="fault-log-body"></tbody>
+        </table>
       </div>
-      
-      <label for="detail-status">Status</label>
-      <select id="detail-status">
-        <option value="Open">Open</option>
-        <option value="In progress">In progress</option>
-        <option value="Resolved">Resolved</option>
-      </select>
 
-      <div id="resolution-fields" hidden>
+      <p id="no-faults" data-i18n="log.noFaults">No reports have been submitted yet.</p>
 
-        <label for="root-cause">Root cause</label>
-        <select id="root-cause">
-          <option value="">-- Select root cause --</option>
-          <option value="component-failure">Component failure</option>
-          <option value="wear">Normal wear</option>
-          <option value="installation-error">Installation or setup error</option>
-          <option value="user-error">User or operator error</option>
-          <option value="power-supply">Power supply or environment</option>
-          <option value="contamination">Contamination or fouling</option>
-          <option value="software">Software or configuration</option>
-          <option value="consumable">Consumable or reagent</option>
-          <option value="no-fault-found">No fault found</option>
-          <option value="other">Other</option>
+      <div id="fault-detail" hidden>
+        <h2 id="detail-title" data-i18n="log.detailTitle">Fault detail</h2>
+        <div id="detail-meta"></div>
+        <div id="detail-extras"></div>
+
+        <h3 data-i18n="log.reportedObservations">Reported observations</h3>
+        <p id="detail-description"></p>
+
+        <h3 data-i18n="log.aiDiagnosis">AI diagnosis</h3>
+        <p id="detail-diagnosis"></p>
+
+        <div id="resolution-display" hidden>
+          <h3 data-i18n="log.howResolved">How it was resolved</h3>
+          <div id="resolution-meta"></div>
+          <p id="resolution-text"></p>
+        </div>
+
+        <label for="detail-status" data-i18n="log.filterStatusLabel">Status</label>
+        <select id="detail-status">
+          <option value="Open" data-i18n="status.open">Open</option>
+          <option value="In progress" data-i18n="status.inProgress">In progress</option>
+          <option value="Resolved" data-i18n="status.resolved">Resolved</option>
         </select>
 
-        <label for="resolution-notes">What was done to resolve it</label>
-        <textarea id="resolution-notes" rows="4"
-          placeholder="Describe what you actually found and what fixed it..."></textarea>
+        <div id="resolution-fields" hidden>
+          <label for="root-cause" data-i18n="log.rootCauseLabel">Root cause</label>
+          <select id="root-cause">
+            <option value="" data-i18n="log.rootCauseDefault">-- Select root cause --</option>
+            <option value="component-failure" data-i18n="log.rootCause.componentFailure">Component failure</option>
+            <option value="wear" data-i18n="log.rootCause.wear">Normal wear</option>
+            <option value="installation-error" data-i18n="log.rootCause.installationError">Installation or setup error</option>
+            <option value="user-error" data-i18n="log.rootCause.userError">User or operator error</option>
+            <option value="power-supply" data-i18n="log.rootCause.powerSupply">Power supply or environment</option>
+            <option value="contamination" data-i18n="log.rootCause.contamination">Contamination or fouling</option>
+            <option value="software" data-i18n="log.rootCause.software">Software or configuration</option>
+            <option value="consumable" data-i18n="log.rootCause.consumable">Consumable or reagent</option>
+            <option value="no-fault-found" data-i18n="log.rootCause.noFaultFound">No fault found</option>
+            <option value="other" data-i18n="log.rootCause.other">Other</option>
+          </select>
 
-        <span class="field-error" id="resolution-error" hidden></span>
+          <label for="resolution-notes" data-i18n="log.resolutionNotesLabel">What was done to resolve it</label>
+          <textarea id="resolution-notes" placeholder="Describe what you actually found and what fixed it..." data-i18n-placeholder="log.resolutionNotesPlaceholder"></textarea>
+          <span id="resolution-error" class="field-error" hidden></span>
 
-        <button type="button" id="save-resolution" class="btn-primary">Save resolution</button>
+          <button id="save-resolution" class="btn-primary" data-i18n="log.saveResolution">Save resolution</button>
+        </div>
 
+        <a href="#" id="detail-chat" class="btn-primary" data-i18n="common.continueInChat">Continue in chat</a>
+        <button id="detail-close" class="btn-secondary" data-i18n="log.close">Close</button>
       </div>
 
-      <a href="#" id="detail-chat" class="btn-primary">Continue in chat</a>
-      <button type="button" id="detail-close" class="btn-secondary">Close</button>
-    </div>
-
-  </main>
+    </main>
 
     <footer>
-      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html">Privacy</a><span class="footer-sep">|</span><a href="terms.html">Terms</a><span class="footer-sep">|</span>Security<span class="footer-sep">|</span>Help<span class="footer-sep">|</span>v1.0.0</p>
+      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html" data-i18n="footer.privacy">Privacy</a><span class="footer-sep">|</span><a href="terms.html" data-i18n="footer.terms">Terms</a><span class="footer-sep">|</span><span data-i18n="footer.security">Security</span><span class="footer-sep">|</span><span data-i18n="footer.help">Help</span><span class="footer-sep">|</span>v1.0.0</p>
     </footer>
+
+<script src="js/i18n.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>
