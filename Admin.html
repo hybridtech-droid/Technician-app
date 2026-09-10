@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin panel - Tervexa</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="decorated-bg">
+
+    <header>
+        <nav>
+            <span class="brand">Tervexa</span>
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">☰</button>
+            <div class="nav-links">
+              <a href="index.html" data-i18n="nav.home">Home</a>
+              <a href="about.html" data-i18n="nav.about">About</a>
+              <a href="fault-report.html" data-i18n="nav.reportFault">Report a fault</a>
+              <a href="fault-log.html" data-i18n="nav.faultLog">Fault log</a>
+              <a href="chat.html" data-i18n="nav.askAI">Ask AI</a>
+              <a href="admin.html" data-i18n="nav.admin" hidden>Admin</a>
+              <a href="login.html" data-i18n="nav.login">Login</a>
+              <a href="signup.html" data-i18n="nav.signup">Sign up</a>
+            </div>
+            <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language">
+                <option value="en">English</option>
+                <option value="fr">Français</option>
+                <option value="es">Español</option>
+                <option value="de">Deutsch</option>
+                <option value="pt">Português</option>
+                <option value="ar">العربية</option>
+                <option value="zh">中文</option>
+                <option value="hi">हिन्दी</option>
+                <option value="sw">Kiswahili</option>
+                <option value="ru">Русский</option>
+                <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+                <option value="sv">Svenska</option>
+            </select>
+        </nav>
+    </header>
+
+    <main>
+      <div class="page-card page-card--wide">
+
+        <div class="page-card-header">
+          <div class="page-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div class="page-card-header-text">
+            <h1 data-i18n="admin.pageTitle">Admin panel</h1>
+            <p data-i18n="admin.intro">Manage every account's role and access. Changes here take effect immediately, even for someone already logged in.</p>
+          </div>
+        </div>
+
+        <div class="admin-company-card">
+          <h2 data-i18n="admin.company.heading">Your company</h2>
+          <p><span data-i18n="admin.company.nameLabel">Company name:</span> <strong id="admin-company-name">—</strong></p>
+          <p><span data-i18n="admin.company.planLabel">Plan:</span> <span class="plan-badge" id="admin-company-plan">—</span></p>
+          <p id="admin-trial-status" class="field-hint" hidden></p>
+
+          <div class="usage-stat">
+            <div class="usage-stat-label">
+              <span data-i18n="admin.company.seatsLabel">Seats used</span>
+              <span id="admin-usage-seats-text">— / —</span>
+            </div>
+            <div class="usage-bar"><div class="usage-bar-fill" id="admin-usage-seats-bar"></div></div>
+          </div>
+
+          <div class="usage-stat">
+            <div class="usage-stat-label">
+              <span data-i18n="admin.company.reportsLabel">Reports this month</span>
+              <span id="admin-usage-reports-text">— / —</span>
+            </div>
+            <div class="usage-bar"><div class="usage-bar-fill" id="admin-usage-reports-bar"></div></div>
+          </div>
+
+          <p class="field-hint"><a href="billing.html" data-i18n="admin.company.manageBilling">Manage billing and plans</a></p>
+
+          <p class="field-hint" data-i18n="admin.company.inviteIntro">Share this invite code with a new employee — they'll enter it when they sign up, and pick their own role.</p>
+          <div class="invite-code-row">
+            <span class="invite-code-box" id="admin-invite-code">--------</span>
+            <button type="button" class="btn-secondary btn-small" id="admin-copy-invite" data-i18n="admin.company.copyCode">Copy</button>
+            <button type="button" class="btn-secondary btn-small" id="admin-regenerate-invite" data-i18n="admin.company.regenerateCode">Regenerate code</button>
+          </div>
+          <p class="field-hint" id="admin-invite-copied" data-i18n="admin.company.codeCopied" hidden>Copied to clipboard.</p>
+        </div>
+
+        <p id="admin-feedback" class="admin-feedback" hidden></p>
+        <p id="admin-loading" data-i18n="admin.loading">Loading accounts...</p>
+
+        <div class="table-wrap">
+          <table id="admin-table" hidden>
+            <thead>
+              <tr>
+                <th data-i18n="admin.table.name">Name</th>
+                <th data-i18n="admin.table.email">Email</th>
+                <th data-i18n="admin.table.role">Role</th>
+                <th data-i18n="admin.table.status">Status</th>
+                <th data-i18n="admin.table.actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-users-body"></tbody>
+          </table>
+        </div>
+
+        <div class="admin-company-card">
+          <h2 data-i18n="admin.exportByReporter.heading">Export fault log by employee</h2>
+          <p class="field-hint" data-i18n="admin.exportByReporter.intro">Download every fault report submitted by one person, or leave this on "Everyone" for the full company log.</p>
+
+          <label for="admin-export-reporter" data-i18n="admin.exportByReporter.selectLabel">Reported by</label>
+          <select id="admin-export-reporter">
+            <option value="" data-i18n="admin.exportByReporter.allOption">Everyone</option>
+          </select>
+
+          <div class="log-toolbar" id="admin-export-toolbar">
+            <button type="button" class="btn-secondary btn-small" id="admin-export-csv" data-i18n="log.exportCsv">Download CSV</button>
+            <button type="button" class="btn-secondary btn-small" id="admin-export-xlsx" data-i18n="log.exportExcel">Download Excel</button>
+            <button type="button" class="btn-secondary btn-small" id="admin-export-pdf" data-i18n="log.exportPdf">Download PDF</button>
+          </div>
+        </div>
+
+        <div class="admin-add-employee-card">
+          <h2 data-i18n="admin.addEmployee.heading">Add an employee directly</h2>
+          <p class="field-hint" data-i18n="admin.addEmployee.intro">Prefer not to share the invite code? Create their login yourself — you'll get a one-time temporary password to pass along to them.</p>
+
+          <form id="add-employee-form">
+            <label for="add-employee-name" data-i18n="admin.addEmployee.nameLabel">Full name</label>
+            <input type="text" id="add-employee-name" name="add-employee-name" autocomplete="off" required>
+
+            <label for="add-employee-phone" data-i18n="admin.addEmployee.phoneLabel">Phone number (optional)</label>
+            <input type="tel" id="add-employee-phone" name="add-employee-phone" autocomplete="off">
+
+            <label for="add-employee-email" data-i18n="admin.addEmployee.emailLabel">Email</label>
+            <input type="email" id="add-employee-email" name="add-employee-email" autocomplete="off" required>
+
+            <label for="add-employee-role" data-i18n="admin.addEmployee.roleLabel">Role</label>
+            <select id="add-employee-role" name="add-employee-role" required>
+              <option value="" data-i18n="signup.roleSelectDefault">-- Select your role --</option>
+              <option value="technician" data-i18n="role.technician">Field technician</option>
+              <option value="field-application-specialist" data-i18n="role.fieldApplicationSpecialist">Field application specialist</option>
+              <option value="engineer" data-i18n="role.engineer">Engineer</option>
+              <option value="supervisor" data-i18n="role.supervisor">Site supervisor</option>
+              <option value="manager" data-i18n="role.manager">Maintenance manager</option>
+              <option value="admin" data-i18n="role.admin">Administrator</option>
+            </select>
+
+            <span id="add-employee-error" class="field-error" hidden></span>
+
+            <button type="submit" id="add-employee-submit" data-i18n="admin.addEmployee.submit">Create account</button>
+          </form>
+
+          <div id="add-employee-result" class="add-employee-result" hidden>
+            <p data-i18n="admin.addEmployee.resultIntro">Account created. Share this temporary password with them directly — it will only be shown once, and they'll be asked to set their own password on first login.</p>
+            <div class="invite-code-row">
+              <span class="invite-code-box" id="add-employee-temp-password">--------</span>
+              <button type="button" class="btn-secondary btn-small" id="add-employee-copy-password" data-i18n="admin.company.copyCode">Copy</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-audit-card">
+          <h2 data-i18n="admin.auditLog.heading">Activity log</h2>
+          <p class="field-hint" data-i18n="admin.auditLog.intro">A record of sensitive account changes in your company — role changes, activations, employees added directly, and invite code resets.</p>
+
+          <div class="table-wrap">
+            <table id="admin-audit-table" hidden>
+              <thead>
+                <tr>
+                  <th data-i18n="admin.auditLog.table.when">When</th>
+                  <th data-i18n="admin.auditLog.table.who">Who</th>
+                  <th data-i18n="admin.auditLog.table.action">Action</th>
+                  <th data-i18n="admin.auditLog.table.target">Target</th>
+                  <th data-i18n="admin.auditLog.table.details">Details</th>
+                </tr>
+              </thead>
+              <tbody id="admin-audit-body"></tbody>
+            </table>
+          </div>
+          <p id="admin-audit-empty" class="field-hint" data-i18n="admin.auditLog.empty" hidden>No activity recorded yet.</p>
+        </div>
+
+      </div>
+    </main>
+
+    <footer>
+      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html" data-i18n="footer.privacy">Privacy</a><span class="footer-sep">|</span><a href="terms.html" data-i18n="footer.terms">Terms</a><span class="footer-sep">|</span><a href="security.html" data-i18n="footer.security">Security</a><span class="footer-sep">|</span><a href="help.html" data-i18n="footer.help">Help</a><span class="footer-sep">|</span><a href="whats-new.html">v1.1.0</a></p>
+    </footer>
+
+<script src="js/i18n.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

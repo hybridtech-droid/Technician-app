@@ -1,4 +1,5 @@
 const fs = require('fs');
+const crypto = require('crypto');
 const Database = require('better-sqlite3');
 const { normalizePhone } = require('./phone');
 
@@ -17,6 +18,18 @@ if (!fs.existsSync(DB_PATH) && fs.existsSync(OLD_DB_PATH)) {
 }
 
 const db = new Database(DB_PATH);
+
+// WAL (Write-Ahead Logging) mode lets reads and writes happen at the same
+// time instead of the default mode's "one write locks out everyone else,
+// even readers" behaviour. With several technicians using the app at once,
+// that default mode is what occasionally produces a "database is locked"
+// error on a write that lands mid-read. WAL mode fixes that for the normal
+// case; `busy_timeout` below is the backstop for the rare moment two writes
+// still land at literally the same instant — instead of failing instantly,
+// better-sqlite3 quietly retries for up to 5 seconds first.
+db.pragma('journal_mode = WAL');
+db.pragma('synchronous = NORMAL');
+db.pragma('busy_timeout = 5000');
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS reports (
@@ -144,6 +157,36 @@ try {
   }
 }
 
+// Lets an administrator turn a login off without deleting the account or
+// its report history — 1 (the default, so every existing account stays
+// exactly as usable as before this column existed) or 0 for deactivated.
+// Checked both at login and on every already-authenticated request (see
+// isActiveUser() in server.js), so deactivating someone who's already
+// logged in actually takes effect immediately, not just on their next
+// login attempt.
+try {
+  db.exec('ALTER TABLE users ADD COLUMN active INTEGER NOT NULL DEFAULT 1');
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    throw err;
+  }
+}
+
+// Lets a field-facing account (technician, engineer, field application
+// specialist) opt into seeing every request type instead of just the ones
+// ROLE_REQUEST_TYPES maps to their role — for people doing genuinely
+// hybrid work (e.g. covering both engineer- and application-specialist-
+// scoped jobs). Defaults to 0 (scoped view) so the scoping actually takes
+// effect for everyone unless they turn it on; see the hybrid-mode toggle
+// in the nav and its enforcement in server.js.
+try {
+  db.exec('ALTER TABLE users ADD COLUMN hybridMode INTEGER NOT NULL DEFAULT 0');
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    throw err;
+  }
+}
+
 const usersMissingNormalizedPhone = db.prepare(
   "SELECT id, phone FROM users WHERE phone IS NOT NULL AND phone != '' AND (phoneNormalized IS NULL OR phoneNormalized = '')"
 ).all();
@@ -199,6 +242,314 @@ db.exec(`
     mode TEXT NOT NULL DEFAULT 'idle',
     draft TEXT NOT NULL DEFAULT '{}',
     updatedAt TEXT
+  )
+`);
+
+// --- Company / tenant support -------------------------------------------
+// Every account now belongs to a real company record instead of a free-text
+// "company" field that was never linked to anything — this is what lets the
+// fault log, exports and the admin panel be scoped to "your company" rather
+// than every signed-up user sharing one pool. inviteCode is what an
+// employee types at signup to land inside their employer's company instead
+// of a text field nobody validated.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS companies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    inviteCode TEXT UNIQUE NOT NULL,
+    createdAt TEXT
+  )
+`);
+
+try {
+  db.exec('ALTER TABLE users ADD COLUMN companyId INTEGER');
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    throw err;
+  }
+}
+
+// Set on an account an administrator created directly from the admin panel
+// (see POST /api/admin/users in server.js) — the admin picks a temporary
+// password on the employee's behalf, so this forces a real password of the
+// employee's own choosing on first login, reusing the same "set a new
+// password" page and flow as an ordinary forgotten-password reset.
+try {
+  db.exec('ALTER TABLE users ADD COLUMN mustChangePassword INTEGER NOT NULL DEFAULT 0');
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    throw err;
+  }
+}
+
+try {
+  db.exec('ALTER TABLE reports ADD COLUMN companyId INTEGER');
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    throw err;
+  }
+}
+
+function generateDefaultInviteCode() {
+  // No 0/O or 1/I — easy to misread out loud over a phone call, which is
+  // exactly how a lot of these codes will actually get shared.
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += alphabet[crypto.randomInt(alphabet.length)];
+  }
+  return code;
+}
+
+// Backfill: every account (and every report) that existed before companies
+// did gets folded into one shared default company, so nothing about what an
+// existing user can already see changes because of this migration — they
+// could already see every other existing account/report before today, and
+// after this they're simply all members of the same one company instead of
+// no company at all. This only ever does real work once; after the first
+// run every account already has a companyId and the SELECT below comes
+// back empty on every later start.
+const usersMissingCompany = db.prepare('SELECT id, company FROM users WHERE companyId IS NULL').all();
+
+if (usersMissingCompany.length > 0) {
+  // Existing accounts each typed whatever they wanted into the old free-text
+  // "company" field, so there's no single authoritative name to inherit —
+  // this picks whichever non-empty value the most existing accounts already
+  // used, falling back to a generic name if nobody had entered one.
+  const nameCounts = {};
+  usersMissingCompany.forEach(function (u) {
+    const name = (u.company || '').trim();
+    if (name) {
+      nameCounts[name] = (nameCounts[name] || 0) + 1;
+    }
+  });
+
+  let defaultCompanyName = 'My company';
+  let bestCount = 0;
+  Object.keys(nameCounts).forEach(function (name) {
+    if (nameCounts[name] > bestCount) {
+      bestCount = nameCounts[name];
+      defaultCompanyName = name;
+    }
+  });
+
+  const defaultInviteCode = generateDefaultInviteCode();
+  const defaultCompany = db.prepare(
+    'INSERT INTO companies (name, inviteCode, createdAt) VALUES (?, ?, ?)'
+  ).run(defaultCompanyName, defaultInviteCode, new Date().toISOString());
+
+  const defaultCompanyId = defaultCompany.lastInsertRowid;
+
+  db.transaction(function () {
+    db.prepare('UPDATE users SET companyId = ? WHERE companyId IS NULL').run(defaultCompanyId);
+    db.prepare(`
+      UPDATE reports SET companyId = (
+        SELECT companyId FROM users WHERE users.id = reports.userId
+      ) WHERE companyId IS NULL
+    `).run();
+    // A report with no matching user shouldn't exist (every report is
+    // created through an authenticated account), but this is the same
+    // defensive fallback used elsewhere in this file rather than leaving
+    // anything orphaned.
+    db.prepare('UPDATE reports SET companyId = ? WHERE companyId IS NULL').run(defaultCompanyId);
+  })();
+
+  console.log(
+    'Backfilled', usersMissingCompany.length,
+    'existing account(s) into a default company ("' + defaultCompanyName + '", invite code ' + defaultInviteCode + ').'
+  );
+}
+
+// --- Plan tiers -----------------------------------------------------------
+// planTier is just a label on the company row; what each tier actually
+// allows lives in one place, PLAN_TIERS in server.js, so pricing/limits
+// can be tuned without another migration. Seat/report limits are enforced
+// (with a grace buffer — see checkSeatLimit/checkReportLimit in server.js)
+// now that a real billing flow exists to send an over-limit company to.
+try {
+  db.exec('ALTER TABLE companies ADD COLUMN planTier TEXT');
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    throw err;
+  }
+}
+
+// One-time backfill, same IS-NULL pattern as the users/reports companyId
+// backfill above: every company that existed before planTier did was using
+// the app with no limits at all (there were none), so defaulting them to
+// 'free' — the most restrictive tier — would be a real behavior change
+// dressed up as a migration. They're grandfathered onto 'pro' instead. A
+// company created from here on always gets an explicit planTier at INSERT
+// time (see POST /api/signup in server.js), never NULL, so this only ever
+// matches pre-existing rows and is a no-op on every later restart.
+db.prepare("UPDATE companies SET planTier = 'pro' WHERE planTier IS NULL").run();
+
+// --- Audit log -----------------------------------------------------------
+// A record of sensitive account-management actions within a company —
+// role changes, activate/deactivate, an admin adding an employee directly,
+// and invite code regeneration. Deliberately scoped to just those (not
+// every report edit/export — that's a much higher-volume, lower-stakes
+// trail that can be added later if it's actually wanted). actorEmail and
+// targetEmail are captured as plain text alongside the id columns so the
+// log still reads sensibly even if the account it refers to is later
+// deleted or changes its email — the log is a historical record, not a
+// live join.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS auditLog (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    companyId INTEGER NOT NULL,
+    actorUserId INTEGER,
+    actorEmail TEXT,
+    action TEXT NOT NULL,
+    targetUserId INTEGER,
+    targetEmail TEXT,
+    details TEXT,
+    createdAt TEXT NOT NULL
+  )
+`);
+
+// --- Billing / subscriptions ----------------------------------------------
+// Everything a company's paid subscription needs to be tracked and acted
+// on. All of it lives on the company row itself (a company subscribes, not
+// an individual user) plus two small supporting tables:
+//   - transactions: a running record of every payment attempt (success or
+//     not) — what admin.html's future billing history and support
+//     investigations both read from. Never deleted, even on downgrade.
+//   - processedWebhookEvents: pure idempotency guard. Every one of the
+//     three providers can and will redeliver the same webhook (retries,
+//     manual resends) — this table's UNIQUE(provider, eventId) is what
+//     stops a redelivered "payment succeeded" from upgrading a company
+//     twice or double-logging a transaction.
+try {
+  db.exec('ALTER TABLE companies ADD COLUMN billingCycle TEXT');
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    throw err;
+  }
+}
+
+try {
+  db.exec('ALTER TABLE companies ADD COLUMN subscriptionStatus TEXT');
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    throw err;
+  }
+}
+
+try {
+  db.exec('ALTER TABLE companies ADD COLUMN subscriptionProvider TEXT');
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    throw err;
+  }
+}
+
+try {
+  db.exec('ALTER TABLE companies ADD COLUMN subscriptionRef TEXT');
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    throw err;
+  }
+}
+
+try {
+  db.exec('ALTER TABLE companies ADD COLUMN currentPeriodEnd TEXT');
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    throw err;
+  }
+}
+
+try {
+  db.exec('ALTER TABLE companies ADD COLUMN pendingCancellation INTEGER NOT NULL DEFAULT 0');
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    throw err;
+  }
+}
+
+// A small JSON blob for whatever extra, provider-specific bit a
+// subscription needs beyond its main reference — right now that's just
+// Paystack's separate "email token", which its subscription-disable
+// endpoint requires alongside the subscription code. Kept generic (rather
+// than a narrow paystackEmailToken column) so a future provider quirk
+// doesn't need its own migration.
+try {
+  db.exec('ALTER TABLE companies ADD COLUMN subscriptionMeta TEXT');
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    throw err;
+  }
+}
+
+// isIndividual marks a company row created through the solo "individual"
+// signup path rather than a real team ("create") signup — same table,
+// just a one-person company under the hood (see /api/signup in
+// server.js). It's what lets the free tier's seat cap differ: 1 seat for
+// an individual, 3 for an actual company.
+try {
+  db.exec('ALTER TABLE companies ADD COLUMN isIndividual INTEGER NOT NULL DEFAULT 0');
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    throw err;
+  }
+}
+
+// trialEndsAt is set once, at signup, only for a brand-new free-tier
+// company (individual or team) — it's what the free trial's hard cutoff
+// (see checkSeatLimit/checkReportLimit in server.js) is measured against.
+// Left NULL for any company created before this column existed, which is
+// what keeps the trial cutoff from retroactively applying to accounts
+// that were already using the app under the old "free, indefinitely"
+// terms — a NULL trialEndsAt is treated as "no trial to expire."
+try {
+  db.exec('ALTER TABLE companies ADD COLUMN trialEndsAt TEXT');
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    throw err;
+  }
+}
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    companyId INTEGER NOT NULL,
+    provider TEXT NOT NULL,
+    providerReference TEXT,
+    planTier TEXT NOT NULL,
+    billingCycle TEXT NOT NULL,
+    amount INTEGER NOT NULL,
+    currency TEXT NOT NULL,
+    status TEXT NOT NULL,
+    createdAt TEXT NOT NULL
+  )
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS processedWebhookEvents (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    provider TEXT NOT NULL,
+    eventId TEXT NOT NULL,
+    processedAt TEXT NOT NULL,
+    UNIQUE(provider, eventId)
+  )
+`);
+
+// Every provider needs a Plan/Price object created on ITS side before it
+// can charge anyone against it (Paystack's /plan, Flutterwave's
+// /payment-plans, Stripe's Price). Rather than creating one every time the
+// server restarts (which would leave a growing pile of duplicate plan
+// objects sitting in each provider's dashboard), the id each provider
+// hands back the first time is cached here and reused after that.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS providerPlanCache (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    provider TEXT NOT NULL,
+    planTier TEXT NOT NULL,
+    billingCycle TEXT NOT NULL,
+    externalId TEXT NOT NULL,
+    createdAt TEXT NOT NULL,
+    UNIQUE(provider, planTier, billingCycle)
   )
 `);
 

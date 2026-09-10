@@ -1,4 +1,17 @@
 <!DOCTYPE html>
+<!--
+  Heads up: almost every text element on this page carries a data-i18n
+  attribute, and js/i18n.js overwrites that element's text on every page
+  load from its TRANSLATIONS.en table (or the matching entry for whatever
+  language is active) — regardless of what's typed here in the HTML.
+  Editing the text between the tags below will NOT change what visitors
+  see, no matter how many times the page is refreshed.
+
+  To change visible text on this page, edit the matching key (e.g.
+  "about.intro1") under TRANSLATIONS.en in js/i18n.js — and update the
+  same key in the fr/es/pt/sw blocks in that file too, so all five
+  languages stay in sync.
+-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -7,7 +20,7 @@
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="decorated-bg">
 
     <header>
         <nav>
@@ -19,6 +32,7 @@
               <a href="fault-report.html" data-i18n="nav.reportFault">Report a fault</a>
               <a href="fault-log.html" data-i18n="nav.faultLog">Fault log</a>
               <a href="chat.html" data-i18n="nav.askAI">Ask AI</a>
+              <a href="admin.html" data-i18n="nav.admin" hidden>Admin</a>
               <a href="login.html" data-i18n="nav.login">Login</a>
               <a href="signup.html" data-i18n="nav.signup">Sign up</a>
             </div>
@@ -42,69 +56,143 @@
 
     <main>
 
-      <h1 data-i18n="about.heading">About this app</h1>
-      <img src="images/equipment.jpg" alt="Engineer inspecting industrial equipment" data-i18n-alt="about.imgAlt" width="500">
+      <div class="page-card about-card">
 
-      <p data-i18n="about.intro1">Tervexa is built for field technicians and engineers who need fast, accurate fault diagnosis on the job.</p>
-      <p data-i18n="about.intro2">Using AI, the app analyses fault descriptions and images submitted by technicians and returns step-by-step troubleshooting guidance in real time.</p>
+      <div class="about-intro">
+        <div class="about-intro-text">
+          <span class="hero-badge">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.8 5.4L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.6L12 2z"/></svg>
+            <span data-i18n="about.badge">About Tervexa</span>
+          </span>
+          <h1 data-i18n="about.heading">About this app</h1>
+          <p data-i18n="about.intro1">Tervexa is built for Field Technicians, Engineers and Application Specialist who need fast, accurate fault diagnosis on the job.</p>
+          <p data-i18n="about.intro2">Using AI, the app analyses fault descriptions and images submitted by Technicians, Engineers and Field Application and returns step-by-step troubleshooting guidance in real time.</p>
+        </div>
+        <div class="about-intro-image">
+          <img src="images/equipment.jpg" alt="Engineer inspecting industrial equipment" data-i18n-alt="about.imgAlt" width="500">
+        </div>
+      </div>
 
       <h2 data-i18n="about.languagesHeading">Multi-language Support</h2>
       <p data-i18n="about.languagesIntro">Tervexa is designed for a global workforce. The platform currently supports the following languages with more being added regularly:</p>
-      <ul>
-        <li>English</li>
-        <li>French - Français</li>
-        <li>Spanish - Español</li>
-        <li>German - Deutsch</li>
-        <li>Portuguese - Português</li>
-        <li>Arabic - العربية</li>
-        <li>Chinese - 中文</li>
-        <li>Hindi - हिन्दी</li>
-        <li>Swahili - Kiswahili</li>
-        <li>Russian - Русский</li>
-        <li>Japanese - 日本語</li>
-        <li>Korean - 한국어</li>
-        <li>Swedish - Svenska</li>
-      </ul>
+      <div class="field-grid" style="margin-bottom: 14px;">
+        <span class="field-tag">English</span>
+        <span class="field-tag">French - Français</span>
+        <span class="field-tag">Spanish - Español</span>
+        <span class="field-tag">German - Deutsch</span>
+        <span class="field-tag">Portuguese - Português</span>
+        <span class="field-tag">Arabic - العربية</span>
+        <span class="field-tag">Chinese - 中文</span>
+        <span class="field-tag">Hindi - हिन्दी</span>
+        <span class="field-tag">Swahili - Kiswahili</span>
+        <span class="field-tag">Russian - Русский</span>
+        <span class="field-tag">Japanese - 日本語</span>
+        <span class="field-tag">Korean - 한국어</span>
+        <span class="field-tag">Swedish - Svenska</span>
+      </div>
       <p data-i18n="about.languagesOutro">The AI-powered Technical intelligence engine responds in the same language the user uses - no translation required. Field engineers across Africa, Europe, Middle East, Asia and beyond can use Tervexa in their native language.</p>
 
       <h2 data-i18n="about.whoHeading">Who it is built for</h2>
-      <ul>
-        <li data-i18n="about.who1">Field technicians handling installations and repairs</li>
-        <li data-i18n="about.who2">Biomedical engineers maintaining medical equipment</li>
-        <li data-i18n="about.who3">Software and control engineer</li>
-        <li data-i18n="about.who4">Structural and civil engineers</li>
-        <li data-i18n="about.who5">Electrical and mechanical engineer</li>
-        <li data-i18n="about.who6">HVAC and instrumentation specialists</li>
-        <li data-i18n="about.who7">site supervisors managing multiple fault reports</li>
-      </ul>
+      <div class="who-grid">
+        <div class="who-card">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2 2.5-2.5z"/></svg></div>
+          <p data-i18n="about.who1">Field technicians handling installations and repairs</p>
+        </div>
+        <div class="who-card">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg></div>
+          <p data-i18n="about.who2">Biomedical engineers maintaining medical equipment</p>
+        </div>
+        <div class="who-card">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6L2 12l6 6M16 6l6 6-6 6"/></svg></div>
+          <p data-i18n="about.who3">Software and control engineer</p>
+        </div>
+        <div class="who-card">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M9 8h1M14 8h1M9 12h1M14 12h1M9 16h1M14 16h1"/></svg></div>
+          <p data-i18n="about.who4">Structural and civil engineers</p>
+        </div>
+        <div class="who-card">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h7l-1 8 11-14h-7l1-6z"/></svg></div>
+          <p data-i18n="about.who5">Electrical and mechanical engineer</p>
+        </div>
+        <div class="who-card">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4v10.5a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0z"/></svg></div>
+          <p data-i18n="about.who6">HVAC and instrumentation specialists</p>
+        </div>
+        <div class="who-card">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="6" width="14" height="15" rx="2"/><path d="M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1z"/><path d="M9 12h6M9 16h6"/></svg></div>
+          <p data-i18n="about.who7">site supervisors managing multiple fault reports</p>
+        </div>
+        <div class="who-card">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><path d="M4.93 4.93l4.24 4.24M14.83 14.83l4.24 4.24M14.83 9.17l4.24-4.24M4.93 19.07l4.24-4.24"/></svg></div>
+          <p data-i18n="about.who8">Application specialists supporting equipment setup, training and on-site guidance</p>
+        </div>
+      </div>
 
       <h2 data-i18n="about.whereHeading">Where we operate</h2>
       <p data-i18n="about.where1">Tervexa is currently operating in Nigeria with active expansion into West Africa underway. Our roadmap includes plans to expand to other regions and globally.</p>
+
+      <div class="roadmap-chips">
+        <div class="roadmap-chip">
+          <strong data-i18n="about.roadmap.nigeria">Nigeria</strong>
+          <span data-i18n="about.roadmap.nigeriaStatus">Live now</span>
+        </div>
+        <div class="roadmap-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>
+        <div class="roadmap-chip">
+          <strong data-i18n="about.roadmap.westAfrica">West Africa</strong>
+          <span data-i18n="about.roadmap.westAfricaStatus">Expanding</span>
+        </div>
+        <div class="roadmap-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>
+        <div class="roadmap-chip">
+          <strong data-i18n="about.roadmap.global">Global</strong>
+          <span data-i18n="about.roadmap.globalStatus">On the roadmap</span>
+        </div>
+      </div>
+
       <p data-i18n="about.where2">Built with global architecture, multiple language support, local and international spare parts integration and region-specific compliance frameworks are core to our platform design.</p>
 
       <h2 data-i18n="about.sparePartsHeading">Spare parts and components</h2>
       <p data-i18n="about.sparePartsIntro">Tervexa provides direct links to leading spare parts and component suppliers to help technicians source what they need quickly. The following suppliers are recommended based on their global reach and product range.</p>
-      <ul>
-        <li><a href="https://ng.rs-online.com" target="_blank">RS Components</a> <span data-i18n="about.supplierRs">— industrial and electronic components, global supplier</span></li>
-        <li><a href="https://www.farnell.com" target="_blank">Farnell</a> <span data-i18n="about.supplierFarnell">— electronic components, worldwide delivery</span></li>
-        <li><a href="https://www.mouser.com" target="_blank">Mouser Electronics</a> <span data-i18n="about.supplierMouser">— authorised distributor of electronic components</span></li>
-        <li><a href="https://www.digikey.com" target="_blank">Digi-Key Electronics</a> <span data-i18n="about.supplierDigikey">— largest online component catalogue globally</span></li>
-      </ul>
+      <div class="spare-grid">
+        <div class="spare-card">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></div>
+          <p><a href="https://ng.rs-online.com" target="_blank">RS Components</a> <span data-i18n="about.supplierRs">— industrial and electronic components, global supplier</span></p>
+        </div>
+        <div class="spare-card">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></div>
+          <p><a href="https://www.farnell.com" target="_blank">Farnell</a> <span data-i18n="about.supplierFarnell">— electronic components, worldwide delivery</span></p>
+        </div>
+        <div class="spare-card">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></div>
+          <p><a href="https://www.mouser.com" target="_blank">Mouser Electronics</a> <span data-i18n="about.supplierMouser">— authorised distributor of electronic components</span></p>
+        </div>
+        <div class="spare-card">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></div>
+          <p><a href="https://www.digikey.com" target="_blank">Digi-Key Electronics</a> <span data-i18n="about.supplierDigikey">— largest online component catalogue globally</span></p>
+        </div>
+      </div>
       <p data-i18n="about.sparePartsDisclaimer">Tervexa is not affiliated with or endorsed by any of the above suppliers. Links are provided for reference only.</p>
 
       <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 18H6a4 4 0 0 1-1-7.87 5.5 5.5 0 0 1 10.6-2.13A4.5 4.5 0 0 1 17 18z"/><line x1="2" y1="2" x2="22" y2="22"/></svg></div>
         <h3 data-i18n="about.offlineTitle">Works offline</h3>
         <p data-i18n="about.offlineBody">No internet? No problem. Technicians can log fault reports, upload photos and record observations without any connection. The app stores everything locally and syncs automatically the moment connectivity is restored — no data is ever lost.</p>
       </div>
 
-      <h2 data-i18n="about.contactHeading">Contact</h2>
-      <p data-i18n="about.contactIntro">For support or partnership enquiries reach us at:</p>
-      <a href="mailto:luckyvictor3@gmail.com">luckyvictor3@gmail.com</a>
+      <div class="about-cta">
+        <h2 data-i18n="about.contactHeading">Contact</h2>
+        <p data-i18n="about.contactIntro">For support or partnership enquiries reach us at:</p>
+        <a href="mailto:luckyvictor3@gmail.com" class="btn-white">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
+          <span data-i18n="about.emailButton">Email us</span>
+        </a>
+      </div>
+
+      </div>
 
     </main>
 
     <footer>
-      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html" data-i18n="footer.privacy">Privacy</a><span class="footer-sep">|</span><a href="terms.html" data-i18n="footer.terms">Terms</a><span class="footer-sep">|</span><span data-i18n="footer.security">Security</span><span class="footer-sep">|</span><span data-i18n="footer.help">Help</span><span class="footer-sep">|</span>v1.0.0</p>
+      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html" data-i18n="footer.privacy">Privacy</a><span class="footer-sep">|</span><a href="terms.html" data-i18n="footer.terms">Terms</a><span class="footer-sep">|</span><a href="security.html" data-i18n="footer.security">Security</a><span class="footer-sep">|</span><a href="help.html" data-i18n="footer.help">Help</a><span class="footer-sep">|</span><a href="whats-new.html">v1.1.0</a></p>
     </footer>
 
 <script src="js/i18n.js"></script>

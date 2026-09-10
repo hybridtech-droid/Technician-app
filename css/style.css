@@ -13,6 +13,72 @@ body {
   background-image: none;
 }
 
+h1, h2, h3, .brand, .btn-primary, .btn-secondary, .btn-white {
+  font-family: 'Poppins', Arial, sans-serif;
+}
+
+/* Decorative background — now used site-wide (every page carries
+   .decorated-bg on <body>, including the logged-in app and the auth
+   pages, not just home/about). Two independent layers give it a sense of
+   depth: ::before is the original faint blueprint-style grid (a nod to
+   engineering) plus colour blooms in the brand teal; ::after is a second,
+   sparser set of blooms drifting at a different speed and direction. Both
+   sit behind everything (z-index: -1), stay fixed as the page scrolls
+   (a page's own scroll already reads as parallax against a fixed
+   background), and drift very slowly and continuously — together that's
+   the "depth over time" effect. Every content box on every page has its
+   own solid background, so this only ever shows through in the page
+   margins and the gaps between cards — never behind text. Motion is
+   disabled under prefers-reduced-motion. */
+body.decorated-bg {
+  position: relative;
+}
+
+body.decorated-bg::before {
+  content: '';
+  position: fixed;
+  inset: -4%;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 88% -8%, rgba(0, 180, 216, 0.18) 0%, transparent 45%),
+    radial-gradient(circle at -8% 40%, rgba(0, 150, 183, 0.13) 0%, transparent 42%),
+    radial-gradient(circle at 100% 100%, rgba(0, 180, 216, 0.12) 0%, transparent 40%),
+    repeating-linear-gradient(0deg, rgba(0, 150, 183, 0.05) 0px, rgba(0, 150, 183, 0.05) 1px, transparent 1px, transparent 42px),
+    repeating-linear-gradient(90deg, rgba(0, 150, 183, 0.05) 0px, rgba(0, 150, 183, 0.05) 1px, transparent 1px, transparent 42px);
+  animation: bg-drift-a 42s ease-in-out infinite;
+}
+
+body.decorated-bg::after {
+  content: '';
+  position: fixed;
+  inset: -4%;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 12% 12%, rgba(0, 180, 216, 0.10) 0%, transparent 36%),
+    radial-gradient(circle at 94% 58%, rgba(0, 150, 183, 0.09) 0%, transparent 38%),
+    radial-gradient(circle at 40% 96%, rgba(0, 180, 216, 0.08) 0%, transparent 34%);
+  animation: bg-drift-b 58s ease-in-out infinite;
+}
+
+@keyframes bg-drift-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-1.4%, 1%, 0) scale(1.03); }
+}
+
+@keyframes bg-drift-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.03); }
+  50% { transform: translate3d(1.1%, -1.3%, 0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.decorated-bg::before,
+  body.decorated-bg::after {
+    animation: none;
+  }
+}
+
 header {
   background: linear-gradient(135deg, #0077a8 0%, #0096b7 50%, #00b4d8 100%);
   padding: 14px 40px;
@@ -138,6 +204,151 @@ textarea:focus {
   border-color: #0096b7;
 }
 
+.field-hint {
+  font-size: 12.5px;
+  color: #6b7280;
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+
+/* The page's default link color (see the plain `a` rule above) is a dark
+   near-black meant for nav/footer links that already carry their own
+   color. A link sitting inline in ordinary body text — like "Manage
+   billing and plans" on the admin page — needs its own color or it just
+   reads as plain text with no sign it's clickable. */
+.field-hint a {
+  color: #0096b7;
+  text-decoration: underline;
+}
+
+.field-hint a:hover {
+  color: #00b4d8;
+}
+
+/* Wraps a password <input> plus its "show/hide" toggle button so the
+   button can sit inside the field, right-aligned. The input's own right
+   padding is pushed out here (higher specificity than the bare
+   input[type="password"] rule above) so typed characters never run under
+   the icon. Also matches input[type="text"] — the toggle flips the
+   input's type attribute between password/text rather than swapping
+   elements, so this has to cover both states. */
+.password-field-wrap {
+  position: relative;
+}
+
+.password-field-wrap input[type="password"],
+.password-field-wrap input[type="text"] {
+  padding-right: 42px;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.password-toggle-btn:hover {
+  color: #0096b7;
+}
+
+.password-toggle-btn:focus-visible {
+  outline: 2px solid #0096b7;
+  outline-offset: 1px;
+}
+
+.password-toggle-btn svg {
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+
+/* Same [hidden]-doesn't-actually-hide-it gap already documented above for
+   .field-error, but for SVG specifically: the browser's own default
+   [hidden] { display: none } isn't reliably winning against an <svg>
+   element's own default display here, so the "eye-off" icon was staying
+   in the flex layout right next to the "eye" icon instead of disappearing
+   — both rendered at once, looking like a two-eyed icon instead of one
+   that toggles. Forcing it explicitly fixes it regardless of which UA
+   rule was actually winning. Confirmed via computed style before/after. */
+.password-toggle-btn svg[hidden] {
+  display: none;
+}
+
+/* Marks a field as compulsory right on its label (red asterisk, matching
+   the existing .field-error red) instead of only surfacing that after a
+   failed submit. On signup.html the conditionally-required fields
+   (company name / invite code / role) live inside .mode-create-only /
+   .mode-join-only, which are already shown or hidden by the mode toggle —
+   so the asterisk automatically only appears while that field is actually
+   required, with no extra JS needed. */
+.required-marker {
+  color: #c0392b;
+  margin-left: 2px;
+}
+
+.required-legend {
+  font-size: 12.5px;
+  color: #6b7280;
+  margin: -6px 0 4px;
+}
+
+/* Signup's "New company" / "Join a company" toggle — two radio inputs,
+   visually hidden, with their labels styled as segmented-control buttons.
+   Relies on the radio immediately preceding its label in the markup so
+   `:checked + label` can style the active side. */
+.signup-mode-toggle {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  padding: 4px;
+  border-radius: 8px;
+  background-color: #f0f4f6;
+}
+
+.signup-mode-toggle input[type="radio"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.signup-mode-toggle label {
+  flex: 1;
+  margin: 0;
+  padding: 10px 12px;
+  text-align: center;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #5a6472;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.signup-mode-toggle input[type="radio"]:checked + label {
+  background-color: #ffffff;
+  color: #0096b7;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.signup-mode-toggle input[type="radio"]:focus-visible + label {
+  outline: 2px solid #0096b7;
+  outline-offset: 1px;
+}
+
 button[type="submit"] {
   display: block;
   width: 100%;
@@ -180,6 +391,16 @@ button[type="submit"]:disabled {
 .auth-card p {
   text-align: center;
   margin-bottom: 8px;
+}
+
+.auth-card ul {
+  margin: 0 0 14px 22px;
+}
+
+.auth-card li {
+  margin-bottom: 6px;
+  color: #3a3a3a;
+  text-align: left;
 }
 
 table {
@@ -244,8 +465,32 @@ input[type="checkbox"] {
 }
 
 .hero {
-  padding-top: 3rem;
+  padding-top: 3.5rem;
   padding-bottom: 3rem;
+  text-align: center;
+  background: radial-gradient(circle at 50% 0%, #e6f6fa 0%, #f0f4f8 65%);
+  border-radius: 16px;
+  margin-bottom: 8px;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ffffff;
+  color: #0096b7;
+  border: 1px solid #b0dce8;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.hero-badge svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 
 .hero h1 {
@@ -254,6 +499,8 @@ input[type="checkbox"] {
   margin-right: auto;
   line-height: 1.15;
   text-align: center;
+  font-weight: 700;
+  color: #0a3a4a;
 }
 
 .hero p {
@@ -268,6 +515,115 @@ input[type="checkbox"] {
   gap: 16px;
   flex-wrap: wrap;
   margin-top: 28px;
+}
+
+.hero-trust {
+  margin-top: 24px;
+  font-size: 13px;
+  color: #6b7a85;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hero-trust svg {
+  width: 16px;
+  height: 16px;
+  color: #0096b7;
+  flex-shrink: 0;
+}
+
+.steps-section {
+  padding: 44px 8px;
+  text-align: center;
+}
+
+.steps-section h2 {
+  font-size: 22px;
+  color: #1a1a2e;
+  margin-bottom: 8px;
+}
+
+.steps-section > p {
+  color: #555555;
+  font-size: 14px;
+  max-width: 56ch;
+  margin: 0 auto 32px;
+}
+
+.step-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.step-card {
+  position: relative;
+  padding: 8px;
+}
+
+.step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #0096b7;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  margin: 0 auto 14px;
+}
+
+.step-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #e8f4f8;
+  color: #0096b7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+}
+
+.step-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.step-card h3 {
+  font-size: 15px;
+  color: #0a3a4a;
+  margin-bottom: 8px;
+}
+
+.step-card p {
+  font-size: 13px;
+  color: #555555;
+  line-height: 1.6;
+  max-width: 30ch;
+  margin: 0 auto;
+}
+
+.feature-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background-color: #e8f4f8;
+  color: #0096b7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.feature-icon svg {
+  width: 22px;
+  height: 22px;
 }
 
 .features {
@@ -349,6 +705,10 @@ input[type="checkbox"] {
   border-radius: 6px;
   white-space: nowrap;
   display: inline-block;
+}
+
+.btn-white[hidden] {
+  display: none;
 }
 
 .cta-section .btn-white:hover {
@@ -504,6 +864,10 @@ input[type="checkbox"] {
   border: 2px solid #0096b7;
 }
 
+.btn-primary[hidden] {
+  display: none;
+}
+
 .btn-primary:hover {
   background-color: #007a96;
   color: #ffffff;
@@ -524,6 +888,10 @@ input[type="checkbox"] {
   border: 2px solid #0096b7;
 }
 
+.btn-secondary[hidden] {
+  display: none;
+}
+
 .btn-secondary:hover {
   background-color: #0096b7;
   color: #ffffff;
@@ -539,6 +907,10 @@ input[type="checkbox"] {
 @media (max-width: 900px) {
   .features {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .step-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
   }
 }
 
@@ -603,6 +975,13 @@ input[type="checkbox"] {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
+/* The admin panel's table (name, email, a role dropdown, a status badge,
+   an actions button) needs more breathing room than the default page-card
+   width before it has to fall back on .table-wrap's horizontal scroll. */
+.page-card--wide {
+  max-width: 880px;
+}
+
 .page-card-header {
   margin-bottom: 24px;
   padding-bottom: 16px;
@@ -618,6 +997,236 @@ input[type="checkbox"] {
   font-size: 14px;
   color: #555555;
   margin: 0;
+}
+
+/* about.html's body copy, wrapped in .page-card.about-card so it reads as
+   a proper page rather than bare text floating on the decorated
+   background — headings, paragraphs, lists and the intro image all get
+   their own breathing room here. */
+.about-card h1 {
+  margin-bottom: 18px;
+}
+
+.about-card h2 {
+  margin-top: 30px;
+  margin-bottom: 10px;
+}
+
+.about-card p {
+  color: #3a3a3a;
+  margin-bottom: 14px;
+}
+
+.about-card ul {
+  margin: 0 0 14px 22px;
+}
+
+.about-card li {
+  margin-bottom: 6px;
+  color: #3a3a3a;
+}
+
+.about-card img {
+  width: 100%;
+  max-width: 460px;
+  height: auto;
+  border-radius: 12px;
+  display: block;
+  margin: 0 auto 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.about-card .feature-card {
+  margin: 20px 0;
+}
+
+.about-card a[href^="mailto"] {
+  color: #0096b7;
+  font-weight: 600;
+}
+
+.about-intro {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.about-intro-text {
+  flex: 1.3;
+}
+
+.about-intro-image {
+  flex: 1;
+}
+
+.about-card .about-intro-image img {
+  margin: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 700px) {
+  .about-intro {
+    flex-direction: column;
+  }
+  .about-intro-image {
+    order: -1;
+  }
+}
+
+.who-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 0 0 14px;
+}
+
+.who-card {
+  background-color: #fbfdfe;
+  border: 1px solid #e8f4f8;
+  border-radius: 10px;
+  padding: 18px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.who-card .feature-icon {
+  margin-bottom: 0;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+}
+
+.who-card .feature-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.who-card p {
+  margin: 0;
+  font-size: 13.5px;
+  color: #3a3a3a;
+}
+
+@media (max-width: 700px) {
+  .who-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.roadmap-chips {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 18px 0 20px;
+}
+
+.roadmap-chip {
+  background-color: #e8f4f8;
+  border: 1px solid #b0dce8;
+  border-radius: 10px;
+  padding: 10px 16px;
+  text-align: center;
+}
+
+.roadmap-chip strong {
+  display: block;
+  color: #0a3a4a;
+  font-size: 14px;
+}
+
+.roadmap-chip span {
+  display: block;
+  color: #0096b7;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.roadmap-arrow {
+  color: #b0dce8;
+  flex-shrink: 0;
+}
+
+.roadmap-arrow svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.spare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin: 0 0 14px;
+}
+
+.spare-card {
+  background-color: #fbfdfe;
+  border: 1px solid #e8f4f8;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.spare-card .feature-icon {
+  margin-bottom: 0;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+}
+
+.spare-card .feature-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.spare-card p {
+  margin: 0;
+  font-size: 13.5px;
+}
+
+.spare-card a {
+  font-weight: 600;
+}
+
+@media (max-width: 700px) {
+  .spare-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.about-cta {
+  background: linear-gradient(135deg, #0077a8 0%, #0096b7 50%, #00b4d8 100%);
+  border-radius: 10px;
+  padding: 28px 32px;
+  text-align: center;
+  margin-top: 8px;
+}
+
+.about-cta h2 {
+  color: #ffffff;
+  margin-top: 0;
+}
+
+.about-cta p {
+  color: #d0f0f8;
+  margin-bottom: 18px;
+}
+
+.about-cta .btn-white {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.about-cta .btn-white svg {
+  width: 16px;
+  height: 16px;
 }
 
 .form-grid {
@@ -707,6 +1316,158 @@ input[type="checkbox"] {
   color: #0096b7;
 }
 
+/* --- Diagnosis step animation ------------------------------------------
+   A generic, animated "what to do" flow (Prepare -> Inspect -> Test ->
+   Resolve -> Confirm) shown alongside the text diagnosis. Deliberately NOT
+   a rendering of the equipment's actual internals — see the comment on
+   buildGenericDiagSteps() in js/main.js for why: an AI-generated picture of
+   what's really happening inside a specific instrument can look convincing
+   and still be mechanically wrong, which is a worse outcome than no
+   picture at all on equipment people actually depend on. This is an
+   abstract process diagram instead, safe to show every time. */
+.diag-anim {
+  background-color: #f5fafc;
+  border: 1px solid #d8ecf1;
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 18px 0;
+}
+
+.diag-anim-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.diag-anim-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0096b7, #00b4d8);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.diag-anim-badge svg {
+  width: 20px;
+  height: 20px;
+}
+
+.diag-anim-heading {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0a3a4a;
+}
+
+.diag-anim-tailored-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #0096b7;
+  background-color: #e6f4f9;
+  border-radius: 20px;
+  padding: 2px 9px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.diag-anim-track {
+  display: flex;
+  flex-direction: column;
+}
+
+.diag-anim-step {
+  display: flex;
+  gap: 14px;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: diagStepIn 0.45s ease forwards;
+}
+
+.diag-anim-icon-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.diag-anim-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  border: 2px solid #00b4d8;
+  color: #0096b7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.diag-anim-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.diag-anim-connector {
+  width: 2px;
+  flex: 1;
+  min-height: 20px;
+  background-color: #bfe6ee;
+  margin: 2px 0;
+  transform: scaleY(0);
+  transform-origin: top;
+  animation: diagLineIn 0.35s ease forwards;
+}
+
+.diag-anim-body {
+  padding-bottom: 20px;
+}
+
+.diag-anim-step:last-child .diag-anim-body {
+  padding-bottom: 4px;
+}
+
+.diag-anim-step-title {
+  font-weight: 600;
+  color: #0a3a4a;
+  margin-bottom: 2px;
+}
+
+.diag-anim-step-detail {
+  font-size: 13.5px;
+  color: #4b5563;
+  line-height: 1.4;
+}
+
+.diag-anim-footer {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@keyframes diagStepIn {
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes diagLineIn {
+  to { transform: scaleY(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .diag-anim-step,
+  .diag-anim-connector {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
 fieldset {
   border: none;
   padding: 0;
@@ -726,6 +1487,18 @@ legend {
   color: #c0392b;
   font-size: 13px;
   margin-top: 4px;
+}
+
+/* A pre-existing gap: this rule's unconditional `display: block` beats the
+   browser's own default `[hidden] { display: none }` (an author stylesheet
+   wins over the UA stylesheet even at equal selector specificity), so
+   every `someField.hidden = true` on a .field-error element across the app
+   — signup, login, reset, fault report, resolution notes — was leaving the
+   element in the layout instead of actually hiding it. Only cosmetic when
+   the text also gets cleared on success, but real whenever it doesn't.
+   Confirmed via computed style before and after this fix.  */
+.field-error[hidden] {
+  display: none;
 }
 
 .input-invalid {
@@ -970,4 +1743,688 @@ footer .footer-line a:hover {
   background-color: #ffffff;
   color: #0096b7;
   text-decoration: none;
+}
+
+/* Lets a technician/engineer/field-application-specialist account switch
+   between its default role-scoped view and seeing every request type —
+   see applyRoleRequestTypeScope() and the hybrid-mode toggle wiring in
+   main.js. Off (aria-pressed="false") reads like a quiet outline button;
+   on (aria-pressed="true") fills solid so it's obvious at a glance that
+   the account is currently seeing more than its usual scope. */
+.nav-hybrid-toggle {
+  cursor: pointer;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 5px 14px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 16px;
+  font-family: inherit;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+
+.nav-hybrid-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.nav-hybrid-toggle[aria-pressed="true"] {
+  background-color: #ffffff;
+  color: #0096b7;
+}
+
+.nav-hybrid-toggle[aria-pressed="true"]:hover {
+  background-color: #f0f0f0;
+}
+
+.nav-hybrid-toggle:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* ---------- Split-screen auth pages (login, signup, reset, new password) ---------- */
+
+.auth-split-wrap {
+  display: flex;
+  align-items: stretch;
+  max-width: 960px;
+  margin: 48px auto;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0, 40, 60, 0.14);
+  background-color: #ffffff;
+}
+
+.auth-branding {
+  flex: 1 1 42%;
+  background: linear-gradient(135deg, #0077a8 0%, #0096b7 50%, #00b4d8 100%);
+  color: #ffffff;
+  padding: 48px 40px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-branding::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 85% 10%, rgba(255, 255, 255, 0.16) 0%, transparent 40%),
+    radial-gradient(circle at 10% 90%, rgba(255, 255, 255, 0.12) 0%, transparent 40%);
+  pointer-events: none;
+}
+
+.auth-branding-inner {
+  position: relative;
+  z-index: 1;
+}
+
+.auth-branding .brand-mark {
+  display: inline-block;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 28px;
+  opacity: 0.95;
+}
+
+.auth-branding h2 {
+  font-size: 26px;
+  font-family: 'Poppins', Arial, sans-serif;
+  margin-bottom: 12px;
+  color: #ffffff;
+}
+
+.auth-branding p {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #e3f6fb;
+  margin-bottom: 28px;
+  text-align: left;
+  max-width: 34ch;
+}
+
+.auth-branding-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-branding-features li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.auth-branding .icon-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.auth-branding .icon-circle svg {
+  width: 16px;
+  height: 16px;
+  stroke: #ffffff;
+}
+
+.auth-form-panel {
+  flex: 1 1 58%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 32px;
+  background-color: #ffffff;
+}
+
+.auth-split-wrap .auth-card {
+  margin: 0;
+  padding: 0;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.auth-form-panel .auth-footer-note {
+  text-align: center;
+  margin-top: 18px;
+  font-size: 13px;
+  color: #555555;
+  max-width: 400px;
+  width: 100%;
+}
+
+.auth-split-wrap--wide {
+  max-width: 1080px;
+}
+
+.auth-split-wrap--wide .auth-card {
+  max-width: 480px;
+}
+
+@media (max-width: 800px) {
+  .auth-split-wrap {
+    flex-direction: column;
+    max-width: 460px;
+    margin: 32px auto;
+  }
+
+  .auth-branding {
+    padding: 32px 32px 28px;
+  }
+
+  .auth-branding p {
+    max-width: none;
+  }
+
+  .auth-form-panel {
+    padding: 32px 28px 36px;
+  }
+}
+
+/* ---------- Page header icon badge (fault-report, fault-log, chat) ---------- */
+
+.page-card-header {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+/* Sits at the end of chat.html's header row, on the same line as the
+   heading/subtitle while there's room, wrapping onto its own line below
+   them on narrow screens instead of squeezing the text column. */
+.chat-clear-btn {
+  align-self: center;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.page-card-header .page-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background-color: #e8f4f8;
+  color: #0096b7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.page-card-header .page-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.page-card-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---------- Fault log summary stat cards ---------- */
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin: 16px 0 24px;
+}
+
+.stat-card {
+  background-color: #fbfdfe;
+  border: 1px solid #e0eef1;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stat-card .feature-icon {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.stat-card .feature-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.stat-card-number {
+  font-size: 20px;
+  font-weight: 700;
+  color: #333333;
+  line-height: 1.1;
+  font-family: 'Poppins', Arial, sans-serif;
+}
+
+.stat-card-label {
+  font-size: 12.5px;
+  color: #666666;
+}
+
+@media (max-width: 700px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ---------- Legal / help pages (terms, privacy, security, help) ---------- */
+
+.legal-updated {
+  color: #777777;
+  font-size: 13px;
+  margin-top: -2px;
+}
+
+.security-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin: 8px 0 4px;
+}
+
+.security-grid .feature-card {
+  margin: 0;
+}
+
+@media (max-width: 700px) {
+  .security-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 8px 0 4px;
+}
+
+.faq-item {
+  background-color: #fbfdfe;
+  border: 1px solid #e0eef1;
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+
+.faq-item h3 {
+  font-size: 15.5px;
+  color: #0077a8;
+  margin-bottom: 6px;
+}
+
+.faq-item p {
+  margin: 0;
+  color: #3a3a3a;
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+/* --- Role-based features: export/print toolbar, delete + admin panel --- */
+
+.log-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 4px 0 18px;
+}
+
+/* An author stylesheet's `display` on this element would otherwise beat
+   the browser's own default `[hidden] { display: none }` rule (author
+   styles win over the UA stylesheet even at equal selector specificity),
+   so a JS-toggled `.hidden = true` on the toolbar would do nothing without
+   this explicit override. */
+.log-toolbar[hidden] {
+  display: none;
+}
+
+.detail-toolbar-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #555555;
+  margin-top: 22px;
+  margin-bottom: 6px;
+}
+
+.btn-small {
+  padding: 8px 16px;
+  font-size: 13.5px;
+}
+
+.btn-danger {
+  background-color: transparent;
+  color: #c0392b;
+  text-decoration: none;
+  padding: 13px 30px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 6px;
+  transition: all 0.2s;
+  display: inline-block;
+  border: 2px solid #c0392b;
+  cursor: pointer;
+}
+
+.btn-danger:hover {
+  background-color: #c0392b;
+  color: #ffffff;
+}
+
+.btn-danger[hidden] {
+  display: none;
+}
+
+.btn-confirm-armed {
+  background-color: #c0392b !important;
+  color: #ffffff !important;
+}
+
+.admin-feedback {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.admin-feedback-ok {
+  background-color: #eafaf1;
+  color: #1e8449;
+}
+
+.admin-feedback-error {
+  background-color: #fdecea;
+  color: #c0392b;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.status-badge-active {
+  background-color: #eafaf1;
+  color: #1e8449;
+}
+
+.status-badge-inactive {
+  background-color: #f2f2f2;
+  color: #777777;
+}
+
+#admin-table select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #cccccc;
+  font-size: 13.5px;
+  max-width: 200px;
+}
+
+#admin-loading {
+  color: #888888;
+}
+
+.admin-company-card,
+.admin-add-employee-card,
+.admin-audit-card {
+  background-color: #f7fafb;
+  border: 1px solid #e2e8ea;
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin-bottom: 22px;
+}
+
+.admin-company-card h2,
+.admin-add-employee-card h2,
+.admin-audit-card h2 {
+  margin-top: 0;
+  font-size: 17px;
+}
+
+.plan-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background-color: #e0f4f8;
+  color: #0077a8;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.usage-stat {
+  margin-top: 14px;
+}
+
+.usage-stat-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #4b5563;
+  margin-bottom: 4px;
+}
+
+.usage-bar {
+  height: 8px;
+  border-radius: 4px;
+  background-color: #e2e8ea;
+  overflow: hidden;
+}
+
+.usage-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0096b7, #00b4d8);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.audit-details-cell {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+/* billing.html — plan comparison + checkout provider picker. */
+.billing-cycle-toggle {
+  display: inline-flex;
+  background-color: #f0f4f8;
+  border-radius: 999px;
+  padding: 4px;
+  margin: 4px 0 24px;
+}
+
+.billing-cycle-btn {
+  border: none;
+  background: none;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #4b5563;
+  cursor: pointer;
+}
+
+.billing-cycle-btn.is-active {
+  background-color: #ffffff;
+  color: #0077a8;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.billing-plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  margin-bottom: 8px;
+}
+
+.billing-plan-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8ea;
+  border-radius: 12px;
+  padding: 22px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.billing-plan-card--current {
+  border-color: #00b4d8;
+  box-shadow: 0 0 0 2px rgba(0, 180, 216, 0.15);
+}
+
+.billing-plan-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0a3a4a;
+  margin-bottom: 4px;
+}
+
+.billing-plan-price {
+  font-size: 26px;
+  font-weight: 700;
+  color: #0077a8;
+  margin-bottom: 2px;
+}
+
+.billing-plan-price small {
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.billing-plan-price-usd {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #8b95a1;
+  margin-bottom: 10px;
+}
+
+.billing-plan-features {
+  list-style: none;
+  margin: 14px 0 20px;
+  padding: 0;
+  font-size: 13.5px;
+  color: #4b5563;
+  flex-grow: 1;
+}
+
+.billing-plan-features li {
+  padding: 4px 0;
+}
+
+.billing-provider-picker {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background-color: rgba(10, 30, 40, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* Same [hidden]-doesn't-actually-hide-it gap documented elsewhere in this
+   file: this rule's own `display: flex` would otherwise beat the browser's
+   default `[hidden] { display: none }` (author styles win over the UA
+   stylesheet at equal specificity), so `providerPicker.hidden = true` in
+   main.js would do nothing without this explicit override — the modal
+   would stay laid out (and intercepting clicks) even while "hidden". */
+.billing-provider-picker[hidden] {
+  display: none;
+}
+
+.billing-provider-picker-inner {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 26px 24px;
+  max-width: 380px;
+  width: 100%;
+}
+
+.billing-provider-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.invite-code-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.invite-code-box {
+  display: inline-block;
+  padding: 8px 14px;
+  background-color: #ffffff;
+  border: 1px solid #cccccc;
+  border-radius: 6px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 15px;
+  letter-spacing: 2px;
+  font-weight: 600;
+  color: #0b4a5c;
+}
+
+.add-employee-result {
+  margin-top: 18px;
+  padding: 14px 16px;
+  background-color: #eafaf1;
+  border: 1px solid #b7e4c7;
+  border-radius: 8px;
+}
+
+.add-employee-result p {
+  margin-bottom: 4px;
+  font-size: 13.5px;
+  color: #1e6b3a;
+}
+
+/* Printing the fault log (the "Print" button in the toolbar calls
+   window.print()) should show a clean table, not the app chrome around
+   it — header/nav, language selector, decorative background, filters and
+   action buttons all add nothing on paper and just waste ink. */
+@media print {
+  header, footer, .log-toolbar, .table-filters, #root-cause-summary,
+  .stat-grid, #fault-detail, .menu-toggle {
+    display: none !important;
+  }
+
+  body.decorated-bg::before, body.decorated-bg::after {
+    display: none !important;
+  }
+
+  main, .page-card {
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  table {
+    width: 100% !important;
+  }
 }

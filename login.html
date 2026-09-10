@@ -7,7 +7,7 @@
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="decorated-bg">
 
     <header>
     <nav>
@@ -19,6 +19,7 @@
           <a href="fault-report.html" data-i18n="nav.reportFault">Report a fault</a>
           <a href="fault-log.html" data-i18n="nav.faultLog">Fault log</a>
           <a href="chat.html" data-i18n="nav.askAI">Ask AI</a>
+          <a href="admin.html" data-i18n="nav.admin" hidden>Admin</a>
           <a href="login.html" data-i18n="nav.login">Login</a>
           <a href="signup.html" data-i18n="nav.signup">Sign up</a>
         </div>
@@ -41,41 +42,80 @@
 </header>
 
     <main>
-     <div class="auth-card">
-      <h1 data-i18n="login.heading">Log in to Tervexa</h1>
-      <p><span data-i18n="auth.dontHaveAccount">Do not have an account yet?</span>
-        <a href="signup.html" data-i18n="auth.signUpHere">Sign up here</a>
-      </p>
-      <form id="login-form">
+      <div class="auth-split-wrap">
 
-        <label for="email" data-i18n="login.emailLabel">Email address</label>
-        <input type="email" id="email" name="email" autocomplete="username"
-               placeholder="Enter your email address" data-i18n-placeholder="login.emailPlaceholder" required>
+        <div class="auth-branding">
+          <div class="auth-branding-inner">
+            <span class="brand-mark">Tervexa</span>
+            <h2 data-i18n="authPanel.login.heading">Welcome back</h2>
+            <p data-i18n="authPanel.login.body">Log in to pick up where you left off — your fault reports, diagnoses and history are all here.</p>
+            <ul class="auth-branding-features">
+              <li>
+                <span class="icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></span>
+                <span data-i18n="home.feature.aiAssist.title">AI Assist</span>
+              </li>
+              <li>
+                <span class="icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 18H6a4 4 0 0 1-1-7.87 5.5 5.5 0 0 1 10.6-2.13A4.5 4.5 0 0 1 17 18z"/><line x1="2" y1="2" x2="22" y2="22"/></svg></span>
+                <span data-i18n="home.feature.offline.title">Offline fault logging</span>
+              </li>
+              <li>
+                <span class="icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span>
+                <span data-i18n="home.feature.multiLanguage.title">Multi-language support</span>
+              </li>
+              <li>
+                <span class="icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2 2.5-2.5z"/></svg></span>
+                <span data-i18n="home.feature.spareParts.title">Spare parts links</span>
+              </li>
+            </ul>
+          </div>
+        </div>
 
-        <label for="password" data-i18n="login.passwordLabel">Password</label>
-        <input type="password" id="password" name="password" autocomplete="current-password"
-               placeholder="Enter your password" data-i18n-placeholder="login.passwordPlaceholder" required>
+        <div class="auth-form-panel">
+          <div class="auth-card">
+            <h1 data-i18n="login.heading">Log in to Tervexa</h1>
+            <p><span data-i18n="auth.dontHaveAccount">Do not have an account yet?</span>
+              <a href="signup.html" data-i18n="auth.signUpHere">Sign up here</a>
+            </p>
+            <form id="login-form">
 
-        <label>
-          <input type="checkbox" id="remember-me" name="remember-me" value="yes">
-          <span data-i18n="login.rememberMe">Remember me on this device</span>
-        </label>
+              <label for="email" data-i18n="login.emailLabel">Email address</label>
+              <input type="email" id="email" name="email" autocomplete="username"
+                     placeholder="Enter your email address" data-i18n-placeholder="login.emailPlaceholder" required>
 
-        <span id="login-error" class="field-error" hidden></span>
+              <label for="password" data-i18n="login.passwordLabel">Password</label>
+              <div class="password-field-wrap">
+                <input type="password" id="password" name="password" autocomplete="current-password"
+                       placeholder="Enter your password" data-i18n-placeholder="login.passwordPlaceholder" required>
+                <button type="button" class="password-toggle-btn" data-toggle-password="password"
+                        aria-label="Show password" aria-pressed="false" data-i18n-aria-label="auth.showPassword">
+                  <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a18.53 18.53 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 7 11 7a18.53 18.53 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                </button>
+              </div>
 
-        <button type="submit" id="login-submit" data-i18n="login.submit">Log in</button>
+              <label>
+                <input type="checkbox" id="remember-me" name="remember-me" value="yes">
+                <span data-i18n="login.rememberMe">Remember me on this device</span>
+              </label>
 
-    </form>
-   </div>
+              <span id="login-error" class="field-error" hidden></span>
 
-    <p><span data-i18n="auth.forgotPassword">Forgot your password?</span>
-        <a href="reset-password.html" data-i18n="auth.resetPasswordLink">Reset password</a>
-    </p>
+              <button type="submit" id="login-submit" data-i18n="login.submit">Log in</button>
 
+          </form>
+         </div>
+
+          <p class="auth-footer-note"><span data-i18n="auth.forgotPassword">Forgot your password?</span>
+              <a href="reset-password.html" data-i18n="auth.resetPasswordLink">Reset password</a>
+          </p>
+
+        </div>
+
+      </div>
   </main>
 
   <footer>
-    <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html" data-i18n="footer.privacy">Privacy</a><span class="footer-sep">|</span><a href="terms.html" data-i18n="footer.terms">Terms</a><span class="footer-sep">|</span><span data-i18n="footer.security">Security</span><span class="footer-sep">|</span><span data-i18n="footer.help">Help</span><span class="footer-sep">|</span>v1.0.0</p>
+    <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html" data-i18n="footer.privacy">Privacy</a><span class="footer-sep">|</span><a href="terms.html" data-i18n="footer.terms">Terms</a><span class="footer-sep">|</span><a href="security.html" data-i18n="footer.security">Security</a><span class="footer-sep">|</span><a href="help.html" data-i18n="footer.help">Help</a><span class="footer-sep">|</span><a href="whats-new.html">v1.1.0</a></p>
   </footer>
 
 <script src="js/i18n.js"></script>

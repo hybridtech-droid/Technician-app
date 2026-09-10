@@ -7,7 +7,7 @@
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="decorated-bg">
 
     <header>
         <nav>
@@ -19,6 +19,7 @@
               <a href="fault-report.html" data-i18n="nav.reportFault">Report a fault</a>
               <a href="fault-log.html" data-i18n="nav.faultLog">Fault log</a>
               <a href="chat.html" data-i18n="nav.askAI">Ask AI</a>
+              <a href="admin.html" data-i18n="nav.admin" hidden>Admin</a>
               <a href="login.html" data-i18n="nav.login">Login</a>
               <a href="signup.html" data-i18n="nav.signup">Sign up</a>
             </div>
@@ -41,15 +42,47 @@
     </header>
 
     <main>
+      <div class="page-card log-card">
 
-      <h1 data-i18n="log.heading">Report log</h1>
-      <p data-i18n="log.intro">All submitted reports are listed below - faults, installation, after-sales and application support. Click any row to view and full record</p>
+      <div class="page-card-header">
+        <div class="page-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="5"/><rect x="12" y="8" width="3" height="9"/><rect x="17" y="5" width="3" height="12"/></svg></div>
+        <div class="page-card-header-text">
+          <h1 data-i18n="log.heading">Report log</h1>
+          <p data-i18n="log.intro">All submitted reports are listed below - faults, installation, after-sales and application support. Click any row to view and full record</p>
+        </div>
+      </div>
 
       <h2 data-i18n="log.summaryHeading">Summary</h2>
-      <p><span data-i18n="log.totalReports">Total reports:</span> <span id="count-total">0</span></p>
-      <p><span data-i18n="log.openCount">Open:</span> <span id="count-open">0</span></p>
-      <p><span data-i18n="log.inProgressCount">In progress:</span> <span id="count-progress">0</span></p>
-      <p><span data-i18n="log.resolvedCount">Resolved:</span> <span id="count-resolved">0</span></p>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>
+          <div>
+            <div class="stat-card-number" id="count-total">0</div>
+            <div class="stat-card-label" data-i18n="log.totalReports">Total reports:</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+          <div>
+            <div class="stat-card-number" id="count-open">0</div>
+            <div class="stat-card-label" data-i18n="log.openCount">Open:</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div>
+            <div class="stat-card-number" id="count-progress">0</div>
+            <div class="stat-card-label" data-i18n="log.inProgressCount">In progress:</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+          <div>
+            <div class="stat-card-number" id="count-resolved">0</div>
+            <div class="stat-card-label" data-i18n="log.resolvedCount">Resolved:</div>
+          </div>
+        </div>
+      </div>
 
       <div id="root-cause-summary" hidden>
         <h2 data-i18n="log.rootCausesHeading">Root causes</h2>
@@ -83,6 +116,13 @@
         </select>
       </div>
 
+      <div class="log-toolbar" id="log-toolbar" hidden>
+        <button type="button" class="btn-secondary btn-small" id="log-print" data-i18n="log.print">Print</button>
+        <button type="button" class="btn-secondary btn-small" id="log-export-csv" data-i18n="log.exportCsv">Download CSV</button>
+        <button type="button" class="btn-secondary btn-small" id="log-export-xlsx" data-i18n="log.exportExcel">Download Excel</button>
+        <button type="button" class="btn-secondary btn-small" id="log-export-pdf" data-i18n="log.exportPdf">Download PDF</button>
+      </div>
+
       <div class="table-wrap">
         <table>
           <thead>
@@ -103,7 +143,9 @@
 
       <p id="no-faults" data-i18n="log.noFaults">No reports have been submitted yet.</p>
 
-      <div id="fault-detail" hidden>
+      </div>
+
+      <div id="fault-detail" class="page-card" hidden>
         <h2 id="detail-title" data-i18n="log.detailTitle">Fault detail</h2>
         <div id="detail-meta"></div>
         <div id="detail-extras"></div>
@@ -113,6 +155,18 @@
 
         <h3 data-i18n="log.aiDiagnosis">AI diagnosis</h3>
         <p id="detail-diagnosis"></p>
+
+        <div id="detail-diagnosis-animation" class="diag-anim" hidden>
+          <div class="diag-anim-header">
+            <div class="diag-anim-badge"></div>
+            <div class="diag-anim-heading"></div>
+          </div>
+          <div class="diag-anim-track"></div>
+          <div class="diag-anim-footer">
+            <button type="button" class="btn-secondary btn-small diag-anim-tailor-btn" hidden></button>
+            <p class="field-error diag-anim-tailor-error" hidden></p>
+          </div>
+        </div>
 
         <div id="resolution-display" hidden>
           <h3 data-i18n="log.howResolved">How it was resolved</h3>
@@ -150,14 +204,23 @@
           <button id="save-resolution" class="btn-primary" data-i18n="log.saveResolution">Save resolution</button>
         </div>
 
+        <p class="detail-toolbar-label" id="detail-toolbar-label" data-i18n="log.downloadThisReport" hidden>Download this report</p>
+        <div class="log-toolbar" id="detail-toolbar" hidden>
+          <button type="button" class="btn-secondary btn-small" id="detail-export-csv" data-i18n="log.exportCsv">Download CSV</button>
+          <button type="button" class="btn-secondary btn-small" id="detail-export-xlsx" data-i18n="log.exportExcel">Download Excel</button>
+          <button type="button" class="btn-secondary btn-small" id="detail-export-pdf" data-i18n="log.exportPdf">Download PDF</button>
+        </div>
+
         <a href="#" id="detail-chat" class="btn-primary" data-i18n="common.continueInChat">Continue in chat</a>
         <button id="detail-close" class="btn-secondary" data-i18n="log.close">Close</button>
+        <button id="detail-delete" class="btn-danger" data-i18n="log.deleteReport" hidden>Delete report</button>
+        <span id="detail-delete-error" class="field-error" hidden></span>
       </div>
 
     </main>
 
     <footer>
-      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html" data-i18n="footer.privacy">Privacy</a><span class="footer-sep">|</span><a href="terms.html" data-i18n="footer.terms">Terms</a><span class="footer-sep">|</span><span data-i18n="footer.security">Security</span><span class="footer-sep">|</span><span data-i18n="footer.help">Help</span><span class="footer-sep">|</span>v1.0.0</p>
+      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html" data-i18n="footer.privacy">Privacy</a><span class="footer-sep">|</span><a href="terms.html" data-i18n="footer.terms">Terms</a><span class="footer-sep">|</span><a href="security.html" data-i18n="footer.security">Security</a><span class="footer-sep">|</span><a href="help.html" data-i18n="footer.help">Help</a><span class="footer-sep">|</span><a href="whats-new.html">v1.1.0</a></p>
     </footer>
 
 <script src="js/i18n.js"></script>

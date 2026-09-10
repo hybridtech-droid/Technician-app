@@ -7,20 +7,21 @@
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="decorated-bg">
 
     <header>
         <nav>
             <span class="brand">Tervexa</span>
             <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">☰</button>
             <div class="nav-links">
-              <a href="index.html">Home</a>
-              <a href="about.html">About</a>
-              <a href="fault-report.html">Report a fault</a>
-              <a href="fault-log.html">Fault log</a>
-              <a href="chat.html">Ask AI</a>
-              <a href="login.html">Login</a>
-              <a href="signup.html">Sign up</a>
+              <a href="index.html" data-i18n="nav.home">Home</a>
+              <a href="about.html" data-i18n="nav.about">About</a>
+              <a href="fault-report.html" data-i18n="nav.reportFault">Report a fault</a>
+              <a href="fault-log.html" data-i18n="nav.faultLog">Fault log</a>
+              <a href="chat.html" data-i18n="nav.askAI">Ask AI</a>
+              <a href="admin.html" data-i18n="nav.admin" hidden>Admin</a>
+              <a href="login.html" data-i18n="nav.login">Login</a>
+              <a href="signup.html" data-i18n="nav.signup">Sign up</a>
             </div>
             <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language">
                 <option value="en">English</option>
@@ -41,34 +42,41 @@
     </header>
 
     <main>
+        <div class="page-card about-card legal-card">
 
-        <h1>Privacy Policy</h1>
-        <p>Last updated: June 2026</p>
-        <p>Tervexa collects only the personal data necessary to provide the service. We do not sell your data to any third party.</p>
+          <div class="page-card-header">
+            <div class="page-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+            <div class="page-card-header-text">
+              <h1 data-i18n="privacy.pageTitle">Privacy Policy</h1>
+              <p class="legal-updated" data-i18n="privacy.lastUpdated">Last updated: June 2026</p>
+            </div>
+          </div>
 
-        <h2>What we collect</h2>
-        <p>Name, email address, phone number, company or organizationname, fault reports and upload images you submit through the platform.</p>
+          <p data-i18n="privacy.intro">Tervexa collects only the personal data necessary to provide the service. We do not sell your data to any third party.</p>
 
-        <h2>Why we collect it</h2>
-        <p>To provide AI-powered fault diagnosis, maintain your account and improve the service.</p>
+          <h2 data-i18n="privacy.whatHeading">What we collect</h2>
+          <p data-i18n="privacy.whatBody">Name, email address, phone number, company or organisation name, fault reports, and any images you upload through the platform.</p>
 
-        <h2>How we protect it</h2>
-        <p>All data is stored securely and encrypted. Images are stored on secure cloud servers</p>
+          <h2 data-i18n="privacy.whyHeading">Why we collect it</h2>
+          <p data-i18n="privacy.whyBody">To provide AI-powered fault diagnosis, maintain your account, and improve the service.</p>
 
-        <h2>Your rights</h2>
-        <p>You may request deletion of your account and all associated data at any time by contacting us at luckyvictor3@gmail.com</p>
+          <h2 data-i18n="privacy.howHeading">How we protect it</h2>
+          <p data-i18n="privacy.howBody">All data is stored securely and encrypted. Images are stored on secure cloud servers.</p>
 
-        <h2>Local device storage</h2>
-        <p>When operating in offline mode, Tervexa temporarily stores fault report data including text descriptions and images on your device using browser local storage technology. 
-        This data remains private to your device and is only transmitted to Tervexa servers when you have an active 
-        internet connection. We do not access locally stored data remotely.</p>
+          <h2 data-i18n="privacy.rightsHeading">Your rights</h2>
+          <p data-i18n="privacy.rightsBody">You may request deletion of your account and all associated data at any time by contacting us at luckyvictor3@gmail.com.</p>
 
+          <h2 data-i18n="privacy.localHeading">Local device storage</h2>
+          <p data-i18n="privacy.localBody">When operating in offline mode, Tervexa temporarily stores fault report data — including text descriptions and images — on your device using browser local storage technology. This data remains private to your device and is only transmitted to Tervexa's servers once you have an active internet connection. We do not access locally stored data remotely.</p>
+
+        </div>
     </main>
 
     <footer>
-      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html">Privacy</a><span class="footer-sep">|</span><a href="terms.html">Terms</a><span class="footer-sep">|</span>Security<span class="footer-sep">|</span>Help<span class="footer-sep">|</span>v1.0.0</p>
+      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html" data-i18n="footer.privacy">Privacy</a><span class="footer-sep">|</span><a href="terms.html" data-i18n="footer.terms">Terms</a><span class="footer-sep">|</span><a href="security.html" data-i18n="footer.security">Security</a><span class="footer-sep">|</span><a href="help.html" data-i18n="footer.help">Help</a><span class="footer-sep">|</span><a href="whats-new.html">v1.1.0</a></p>
     </footer>
 
+<script src="js/i18n.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

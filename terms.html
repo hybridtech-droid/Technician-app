@@ -7,20 +7,21 @@
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="decorated-bg">
 
     <header>
       <nav>
         <span class="brand">Tervexa</span>
         <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">☰</button>
         <div class="nav-links">
-          <a href="index.html">Home</a>
-          <a href="about.html">About</a>
-          <a href="fault-report.html">Report a fault</a>
-          <a href="fault-log.html">Fault log</a>
-          <a href="chat.html">Ask AI</a>
-          <a href="login.html">Login</a>
-          <a href="signup.html">Sign up</a>
+          <a href="index.html" data-i18n="nav.home">Home</a>
+          <a href="about.html" data-i18n="nav.about">About</a>
+          <a href="fault-report.html" data-i18n="nav.reportFault">Report a fault</a>
+          <a href="fault-log.html" data-i18n="nav.faultLog">Fault log</a>
+          <a href="chat.html" data-i18n="nav.askAI">Ask AI</a>
+          <a href="admin.html" data-i18n="nav.admin" hidden>Admin</a>
+          <a href="login.html" data-i18n="nav.login">Login</a>
+          <a href="signup.html" data-i18n="nav.signup">Sign up</a>
         </div>
         <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language">
                 <option value="en">English</option>
@@ -41,45 +42,53 @@
     </header>
 
     <main>
+      <div class="page-card about-card legal-card">
 
-      <h1>Terms and Conditions</h1>
-      <p>Last updated: June 2026</p>
-      <p>By creating an account on Tervexa you agree to these terms.</p>
+        <div class="page-card-header">
+          <div class="page-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M5 7l-3 6a4 4 0 0 0 8 0l-3-6M19 7l-3 6a4 4 0 0 0 8 0l-3-6M5 7h14M9 3h6"/></svg></div>
+          <div class="page-card-header-text">
+            <h1 data-i18n="terms.pageTitle">Terms and Conditions</h1>
+            <p class="legal-updated" data-i18n="terms.lastUpdated">Last updated: June 2026</p>
+          </div>
+        </div>
 
-      <h2>Use of AI diagnnosis</h2>
-      <p>All AI-generated fault diagnoses provided by Tervexa are suggestion only. They must be reviewed and verified by a qualified engineer before any action is taken. Tervexa accepts no liability for equipment damage, injury or loss resulting from acting on AI-generated gguidance</p>
-      
-      <h2>Account responsibility</h2>
-      <p>You are responsible for keeping your login credentials secure. Do not share your account with other users.</p>
-      
-      <h2>Data</h2>
-      <p>Please read our Privacy Policy for full details of how we handle your personal data.</p>
+        <p data-i18n="terms.intro">By creating an account on Tervexa, you agree to these terms.</p>
 
-      <h2>Intellectual Property</h2>
-      <p>All intellectual property rights in the services are owned by Tervexa or its licensors.</p>
+        <h2 data-i18n="terms.aiDiagnosisHeading">Use of AI diagnosis</h2>
+        <p data-i18n="terms.aiDiagnosisBody">All AI-generated fault diagnoses provided by Tervexa are suggestions only. They must be reviewed and verified by a qualified engineer before any action is taken. Tervexa accepts no liability for equipment damage, injury or loss resulting from acting on AI-generated guidance.</p>
 
-      <h2>Language and Translation</h2>
-      <p>Tervexa provides AI-generated content in multiple languages. While we strive for accuracy across all supported languages, users should be aware that AI translation may occassionally contain errors. For safety-critical decisions, users should verify AI-generated guidance with a qualified engineer regardless of the language used.</p>
+        <h2 data-i18n="terms.accountHeading">Account responsibility</h2>
+        <p data-i18n="terms.accountBody">You are responsible for keeping your login credentials secure. Do not share your account with other users.</p>
 
-      <h2>Limitation of Liability</h2>
-      <p>Tervexa shall not be liable for any indirect, incidental, special, or consequential damages arising out of the use of or inability to use the services.</p>
+        <h2 data-i18n="terms.dataHeading">Data</h2>
+        <p data-i18n="terms.dataBody">Please read our Privacy Policy for full details of how we handle your personal data.</p>
 
-      <h2>Offline data storage</h2>
-      <p>Tervexa may store your fault report data locally on your device when you are offline, to ensure you can continue using our services without an internet connection. This data is encrypted, stored securely and is transmitted to our server automatically when connectivity is restored. No fault data is permanently stored on your device — it is cleared 
-      from local storage once successfully synced. You can clear locally stored data at any time through your browser settings.</p>
-    
-      <h2>Changes to Terms</h2>
-      <p>We reserve the right to modify these terms at any time. We will notify you of any changes by posting the updated terms on our website.</p>
-    
-      <h2>Jurisdiction</h2>
-      <p>Tervexa is operated by XXXXXXX Nig. Ltd, a company registered in Nigeria under the Corporate Affairs Commission. These terms are governed by the laws of the Federal Republic of Nigeria. Users outside of Nigeria access the platform voluntarily and are responsible for ensuring their use complies with their local laws and regulations.</p>
-    
+        <h2 data-i18n="terms.ipHeading">Intellectual property</h2>
+        <p data-i18n="terms.ipBody">All intellectual property rights in the service are owned by Tervexa or its licensors.</p>
+
+        <h2 data-i18n="terms.languageHeading">Language and translation</h2>
+        <p data-i18n="terms.languageBody">Tervexa provides AI-generated content in multiple languages. While we strive for accuracy across all supported languages, users should be aware that AI translation may occasionally contain errors. For safety-critical decisions, users should verify AI-generated guidance with a qualified engineer regardless of the language used.</p>
+
+        <h2 data-i18n="terms.liabilityHeading">Limitation of liability</h2>
+        <p data-i18n="terms.liabilityBody">Tervexa shall not be liable for any indirect, incidental, special or consequential damages arising out of the use of, or inability to use, the service.</p>
+
+        <h2 data-i18n="terms.offlineHeading">Offline data storage</h2>
+        <p data-i18n="terms.offlineBody">Tervexa may store your fault report data locally on your device when you are offline, so you can continue using the service without an internet connection. This data is encrypted, stored securely, and is transmitted to our server automatically once connectivity is restored. No fault data is permanently stored on your device — it is cleared from local storage once it has synced successfully. You can clear locally stored data at any time through your browser settings.</p>
+
+        <h2 data-i18n="terms.changesHeading">Changes to these terms</h2>
+        <p data-i18n="terms.changesBody">We reserve the right to modify these terms at any time. We will notify you of any changes by posting the updated terms on our website.</p>
+
+        <h2 data-i18n="terms.jurisdictionHeading">Jurisdiction</h2>
+        <p data-i18n="terms.jurisdictionBody">Tervexa is operated by [Your Company Name] Nig. Ltd, a company registered in Nigeria under the Corporate Affairs Commission. These terms are governed by the laws of the Federal Republic of Nigeria. Users outside of Nigeria access the platform voluntarily and are responsible for ensuring their use complies with their local laws and regulations.</p>
+
+      </div>
     </main>
 
     <footer>
-      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html">Privacy</a><span class="footer-sep">|</span><a href="terms.html">Terms</a><span class="footer-sep">|</span>Security<span class="footer-sep">|</span>Help<span class="footer-sep">|</span>v1.0.0</p>
+      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html" data-i18n="footer.privacy">Privacy</a><span class="footer-sep">|</span><a href="terms.html" data-i18n="footer.terms">Terms</a><span class="footer-sep">|</span><a href="security.html" data-i18n="footer.security">Security</a><span class="footer-sep">|</span><a href="help.html" data-i18n="footer.help">Help</a><span class="footer-sep">|</span><a href="whats-new.html">v1.1.0</a></p>
     </footer>
 
+<script src="js/i18n.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

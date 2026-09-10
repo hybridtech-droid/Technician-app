@@ -7,7 +7,7 @@
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="decorated-bg">
 
   <header>
     <nav>
@@ -19,6 +19,7 @@
           <a href="fault-report.html" data-i18n="nav.reportFault">Report a fault</a>
           <a href="fault-log.html" data-i18n="nav.faultLog">Fault log</a>
           <a href="chat.html" data-i18n="nav.askAI">Ask AI</a>
+          <a href="admin.html" data-i18n="nav.admin" hidden>Admin</a>
           <a href="login.html" data-i18n="nav.login">Login</a>
           <a href="signup.html" data-i18n="nav.signup">Sign up</a>
         </div>
@@ -41,60 +42,127 @@
   </header>
 
 <main>
-  <div class="auth-card">
+  <div class="auth-split-wrap auth-split-wrap--wide">
+
+    <div class="auth-branding">
+      <div class="auth-branding-inner">
+        <span class="brand-mark">Tervexa</span>
+        <h2 data-i18n="authPanel.signup.heading">Join Tervexa</h2>
+        <p data-i18n="authPanel.signup.body">Create your free account and get instant AI-powered fault diagnosis wherever you are working.</p>
+        <ul class="auth-branding-features">
+          <li>
+            <span class="icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></span>
+            <span data-i18n="home.feature.aiAssist.title">AI Assist</span>
+          </li>
+          <li>
+            <span class="icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 18H6a4 4 0 0 1-1-7.87 5.5 5.5 0 0 1 10.6-2.13A4.5 4.5 0 0 1 17 18z"/><line x1="2" y1="2" x2="22" y2="22"/></svg></span>
+            <span data-i18n="home.feature.offline.title">Offline fault logging</span>
+          </li>
+          <li>
+            <span class="icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span>
+            <span data-i18n="home.feature.multiLanguage.title">Multi-language support</span>
+          </li>
+          <li>
+            <span class="icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2 2.5-2.5z"/></svg></span>
+            <span data-i18n="home.feature.spareParts.title">Spare parts links</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="auth-form-panel">
+    <div class="auth-card">
     <h1 data-i18n="signup.heading">Create your Tervexa account</h1>
     <p><span data-i18n="auth.alreadyHaveAccount">Already have an account?</span> <a href="login.html" data-i18n="auth.logInHere">Log in here</a>.</p>
 
+    <div class="signup-mode-toggle" role="tablist">
+      <input type="radio" id="mode-create" name="signup-mode" value="create" checked>
+      <label for="mode-create" data-i18n="signup.modeCreate">New company</label>
+      <input type="radio" id="mode-join" name="signup-mode" value="join">
+      <label for="mode-join" data-i18n="signup.modeJoin">Join a company</label>
+      <input type="radio" id="mode-individual" name="signup-mode" value="individual">
+      <label for="mode-individual" data-i18n="signup.modeIndividual">Just me</label>
+    </div>
+
     <form id="signup-form">
 
-       <label for="full-name" data-i18n="signup.fullNameLabel">Full name:</label>
+       <p class="required-legend"><span class="required-marker" aria-hidden="true">*</span><span data-i18n="signup.requiredLegend">Required</span></p>
+
+       <label for="full-name"><span data-i18n="signup.fullNameLabel">Full name:</span><span class="required-marker" aria-hidden="true">*</span></label>
        <input type="text" id="full-name" name="full-name"
                placeholder="Enter your full name" data-i18n-placeholder="signup.fullNamePlaceholder"
                autocomplete="name"
                required>
 
-       <label for="phone" data-i18n="signup.phoneLabel">Phone number</label>
+       <label for="phone"><span data-i18n="signup.phoneLabel">Phone number</span><span class="required-marker" aria-hidden="true">*</span></label>
        <input type="tel" id="phone" name="phone"
                placeholder="Enter your phone number" data-i18n-placeholder="signup.phonePlaceholder"
                autocomplete="tel"
                required>
 
-       <label for="role" data-i18n="signup.roleLabel">Your role</label>
-      <select id="role" name="role" required>
-           <option value="" data-i18n="signup.roleSelectDefault">-- Select your role --</option>
-           <option value="technician" data-i18n="role.technician">Field technician</option>
-           <option value="field-application-specialist" data-i18n="role.fieldApplicationSpecialist">Field application specialist</option>
-           <option value="engineer" data-i18n="role.engineer">Engineer</option>
-           <option value="supervisor" data-i18n="role.supervisor">Site supervisor</option>
-           <option value="manager" data-i18n="role.manager">Maintenance manager</option>
-           <option value="admin" data-i18n="role.admin">Administrator</option>
-       </select>
-
-       <label for="email" data-i18n="signup.emailLabel">Email</label>
+       <label for="email"><span data-i18n="signup.emailLabel">Email</span><span class="required-marker" aria-hidden="true">*</span></label>
        <input type="email" id="email" name="email"
                placeholder="Enter your email address" data-i18n-placeholder="signup.emailPlaceholder"
                autocomplete="email"
                required>
 
-        <label for="company" data-i18n="signup.companyLabel">Company or organisation or self-employed</label>
-        <input type="text" id="company" name="company"
-               placeholder="Enter your company or organisation name or self-employed status" data-i18n-placeholder="signup.companyPlaceholder"
-               autocomplete="organization"
-               required>
+       <div class="mode-create-only">
+         <label for="company-name"><span data-i18n="signup.companyNameLabel">Your company or organisation name</span><span class="required-marker" aria-hidden="true">*</span></label>
+         <input type="text" id="company-name" name="company-name"
+                placeholder="e.g. Lagos Cold Chain Services" data-i18n-placeholder="signup.companyNamePlaceholder"
+                autocomplete="organization">
+         <p class="field-hint" data-i18n="signup.companyNameHint">This creates your company's Tervexa account and makes you its administrator. You can invite your team afterward from the admin panel.</p>
+       </div>
 
-        <label for="password" data-i18n="signup.passwordLabel">Create password</label>
-        <input type="password" id="password" name="password"
-               placeholder="Minimum 8 characters, include letters and numbers" data-i18n-placeholder="signup.passwordPlaceholder"
-               autocomplete="new-password"
-               minlength="8"
-               required>
+       <div class="mode-join-only" hidden>
+         <label for="invite-code"><span data-i18n="signup.inviteCodeLabel">Company invite code</span><span class="required-marker" aria-hidden="true">*</span></label>
+         <input type="text" id="invite-code" name="invite-code"
+                placeholder="e.g. 7K4RXPMD" data-i18n-placeholder="signup.inviteCodePlaceholder"
+                autocapitalize="characters" autocomplete="off">
+         <p class="field-hint" data-i18n="signup.inviteCodeHint">Get this from your company's administrator.</p>
 
-        <label for="confirm-password" data-i18n="signup.confirmPasswordLabel">Confirm password</label>
-        <input type="password" id="confirm-password" name="confirm-password"
-               placeholder="Re-enter your password" data-i18n-placeholder="signup.confirmPasswordPlaceholder"
-               autocomplete="new-password"
-               minlength="8"
-               required>
+         <label for="role"><span data-i18n="signup.roleLabel">Your role</span><span class="required-marker" aria-hidden="true">*</span></label>
+         <select id="role" name="role">
+              <option value="" data-i18n="signup.roleSelectDefault">-- Select your role --</option>
+              <option value="technician" data-i18n="role.technician">Field technician</option>
+              <option value="field-application-specialist" data-i18n="role.fieldApplicationSpecialist">Field application specialist</option>
+              <option value="engineer" data-i18n="role.engineer">Engineer</option>
+              <option value="supervisor" data-i18n="role.supervisor">Site supervisor</option>
+              <option value="manager" data-i18n="role.manager">Maintenance manager</option>
+          </select>
+       </div>
+
+       <div class="mode-individual-only" hidden>
+         <p class="field-hint" data-i18n="signup.individualHint">This creates a personal Tervexa account just for you — no company name or invite code needed. You can invite others to your workspace later from the admin panel if that ever changes.</p>
+       </div>
+
+        <label for="password"><span data-i18n="signup.passwordLabel">Create password</span><span class="required-marker" aria-hidden="true">*</span></label>
+        <div class="password-field-wrap">
+          <input type="password" id="password" name="password"
+                 placeholder="Minimum 8 characters, include letters and numbers" data-i18n-placeholder="signup.passwordPlaceholder"
+                 autocomplete="new-password"
+                 minlength="8"
+                 required>
+          <button type="button" class="password-toggle-btn" data-toggle-password="password"
+                  aria-label="Show password" aria-pressed="false" data-i18n-aria-label="auth.showPassword">
+            <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a18.53 18.53 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 7 11 7a18.53 18.53 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
+
+        <label for="confirm-password"><span data-i18n="signup.confirmPasswordLabel">Confirm password</span><span class="required-marker" aria-hidden="true">*</span></label>
+        <div class="password-field-wrap">
+          <input type="password" id="confirm-password" name="confirm-password"
+                 placeholder="Re-enter your password" data-i18n-placeholder="signup.confirmPasswordPlaceholder"
+                 autocomplete="new-password"
+                 minlength="8"
+                 required>
+          <button type="button" class="password-toggle-btn" data-toggle-password="confirm-password"
+                  aria-label="Show password" aria-pressed="false" data-i18n-aria-label="auth.showPassword">
+            <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a18.53 18.53 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 7 11 7a18.53 18.53 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
         <span id="confirm-password-error" class="field-error" hidden></span>
 
         <label class="form-legal">
@@ -117,10 +185,13 @@
 
     </form>
    </div>
+   </div>
+
+  </div>
   </main>
 
   <footer>
-    <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><span data-i18n="footer.security">Security</span><span class="footer-sep">|</span><span data-i18n="footer.help">Help</span><span class="footer-sep">|</span>v1.0.0</p>
+    <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html" data-i18n="footer.privacy">Privacy</a><span class="footer-sep">|</span><a href="terms.html" data-i18n="footer.terms">Terms</a><span class="footer-sep">|</span><a href="security.html" data-i18n="footer.security">Security</a><span class="footer-sep">|</span><a href="help.html" data-i18n="footer.help">Help</a><span class="footer-sep">|</span><a href="whats-new.html">v1.1.0</a></p>
   </footer>
 
 <script src="js/i18n.js"></script>

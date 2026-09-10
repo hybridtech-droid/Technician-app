@@ -7,20 +7,21 @@
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="decorated-bg">
 
     <header>
         <nav>
             <span class="brand">Tervexa</span>
             <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">☰</button>
             <div class="nav-links">
-              <a href="index.html">Home</a>
-              <a href="about.html">About</a>
-              <a href="fault-report.html">Report a fault</a>
-              <a href="fault-log.html">Fault log</a>
-              <a href="chat.html">Ask AI</a>
-              <a href="login.html">Login</a>
-              <a href="signup.html">Sign up</a>
+              <a href="index.html" data-i18n="nav.home">Home</a>
+              <a href="about.html" data-i18n="nav.about">About</a>
+              <a href="fault-report.html" data-i18n="nav.reportFault">Report a fault</a>
+              <a href="fault-log.html" data-i18n="nav.faultLog">Fault log</a>
+              <a href="chat.html" data-i18n="nav.askAI">Ask AI</a>
+              <a href="admin.html" data-i18n="nav.admin" hidden>Admin</a>
+              <a href="login.html" data-i18n="nav.login">Login</a>
+              <a href="signup.html" data-i18n="nav.signup">Sign up</a>
             </div>
             <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language">
                 <option value="en">English</option>
@@ -41,34 +42,69 @@
     </header>
 
     <main>
+        <div class="auth-split-wrap">
 
-        <h1>Check your email</h1>
+          <div class="auth-branding">
+            <div class="auth-branding-inner">
+              <span class="brand-mark">Tervexa</span>
+              <h2 data-i18n="authPanel.resetSent.heading">Check your email</h2>
+              <p data-i18n="authPanel.resetSent.body">We've sent a secure reset link to your inbox. Follow it to get back into your account.</p>
+              <ul class="auth-branding-features">
+                <li>
+                  <span class="icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></span>
+                  <span data-i18n="home.feature.aiAssist.title">AI Assist</span>
+                </li>
+                <li>
+                  <span class="icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 18H6a4 4 0 0 1-1-7.87 5.5 5.5 0 0 1 10.6-2.13A4.5 4.5 0 0 1 17 18z"/><line x1="2" y1="2" x2="22" y2="22"/></svg></span>
+                  <span data-i18n="home.feature.offline.title">Offline fault logging</span>
+                </li>
+                <li>
+                  <span class="icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span>
+                  <span data-i18n="home.feature.multiLanguage.title">Multi-language support</span>
+                </li>
+                <li>
+                  <span class="icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2 2.5-2.5z"/></svg></span>
+                  <span data-i18n="home.feature.spareParts.title">Spare parts links</span>
+                </li>
+              </ul>
+            </div>
+          </div>
 
-        <p>We have sent a password reset link to your email address. Please check your inbox and click the link inside to continue.</p>
-        
-        <p>The link will expire after 30 minutes for security reasons.</p>
-        
-        <h2>Did not receive the email?</h2>
-        <ul>
-            <li>Check your spam or junk folder</li>
-            <li>Make sure you entered the correct email address</li>
-            <li>Wait a few minutes and check again</li>
-        </ul>
+          <div class="auth-form-panel">
+          <div class="auth-card">
 
-        <p>Still no email?
-            <a href="reset-password.html">Try again with a different email address</a>
-        </p>
+          <h1 data-i18n="resetSent.heading">Check your email</h1>
+          <p data-i18n="resetSent.intro">We've sent a password reset link to your email address. Check your inbox and click the link inside to continue.</p>
+          <p data-i18n="resetSent.expiry">The link will expire after 30 minutes for security reasons.</p>
 
-        <p>Need help</p>            
-            <a href="mailto:luckyvictor3@gmail.com">Contact support</a>
-        </p>
+          <h2 data-i18n="resetSent.noEmailHeading">Didn't receive the email?</h2>
+          <ul>
+            <li data-i18n="resetSent.tip1">Check your spam or junk folder</li>
+            <li data-i18n="resetSent.tip2">Make sure you entered the correct email address</li>
+            <li data-i18n="resetSent.tip3">Wait a few minutes and check again</li>
+          </ul>
 
+          <div class="auth-footer-links">
+            <span data-i18n="resetSent.stillNoEmail">Still no email?</span>
+            <a href="reset-password.html" class="legal-highlight" data-i18n="resetSent.tryAgain">Try again with a different email address</a>
+          </div>
+
+          <div class="auth-footer-links">
+            <span data-i18n="auth.needHelp">Need help?</span>
+            <a href="mailto:luckyvictor3@gmail.com" class="legal-highlight" data-i18n="auth.contactSupport">Contact support</a>
+          </div>
+
+        </div>
+        </div>
+
+        </div>
     </main>
 
     <footer>
-      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html">Privacy</a><span class="footer-sep">|</span><a href="terms.html">Terms</a><span class="footer-sep">|</span>Security<span class="footer-sep">|</span>Help<span class="footer-sep">|</span>v1.0.0</p>
+      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html" data-i18n="footer.privacy">Privacy</a><span class="footer-sep">|</span><a href="terms.html" data-i18n="footer.terms">Terms</a><span class="footer-sep">|</span><a href="security.html" data-i18n="footer.security">Security</a><span class="footer-sep">|</span><a href="help.html" data-i18n="footer.help">Help</a><span class="footer-sep">|</span><a href="whats-new.html">v1.1.0</a></p>
     </footer>
 
+<script src="js/i18n.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

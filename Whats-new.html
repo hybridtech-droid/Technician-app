@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What's New - Tervexa</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="decorated-bg">
+
+    <header>
+        <nav>
+            <span class="brand">Tervexa</span>
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">☰</button>
+            <div class="nav-links">
+              <a href="index.html" data-i18n="nav.home">Home</a>
+              <a href="about.html" data-i18n="nav.about">About</a>
+              <a href="fault-report.html" data-i18n="nav.reportFault">Report a fault</a>
+              <a href="fault-log.html" data-i18n="nav.faultLog">Fault log</a>
+              <a href="chat.html" data-i18n="nav.askAI">Ask AI</a>
+              <a href="admin.html" data-i18n="nav.admin" hidden>Admin</a>
+              <a href="login.html" data-i18n="nav.login">Login</a>
+              <a href="signup.html" data-i18n="nav.signup">Sign up</a>
+            </div>
+            <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language">
+                <option value="en">English</option>
+                <option value="fr">Français</option>
+                <option value="es">Español</option>
+                <option value="de">Deutsch</option>
+                <option value="pt">Português</option>
+                <option value="ar">العربية</option>
+                <option value="zh">中文</option>
+                <option value="hi">हिन्दी</option>
+                <option value="sw">Kiswahili</option>
+                <option value="ru">Русский</option>
+                <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+                <option value="sv">Svenska</option>
+            </select>
+        </nav>
+    </header>
+
+    <main>
+        <div class="page-card about-card legal-card">
+
+          <div class="page-card-header">
+            <div class="page-icon"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.8 5.4L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.6L12 2z"/></svg></div>
+            <div class="page-card-header-text">
+              <h1 data-i18n="whatsNew.pageTitle">What's New</h1>
+              <p class="legal-updated" data-i18n="whatsNew.versionBadge">v1.1.0 — Latest release</p>
+            </div>
+          </div>
+
+          <p data-i18n="whatsNew.intro">Here's what's included in Tervexa, most recent update first. We'll keep this page updated as new features and languages roll out.</p>
+
+          <h2 data-i18n="whatsNew.v110Heading">New in v1.1.0</h2>
+
+          <div class="security-grid">
+
+            <div class="feature-card">
+              <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+              <h3 data-i18n="whatsNew.v110Item1Title">Roles now shape what you can do</h3>
+              <p data-i18n="whatsNew.v110Item1Body">Your account role determines what you can see and do in the fault log — submit reports, manage every report, or both, depending on whether you're a technician, engineer, supervisor, manager or administrator.</p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+              <h3 data-i18n="whatsNew.v110Item2Title">New: an admin panel for managing accounts</h3>
+              <p data-i18n="whatsNew.v110Item2Body">Administrators can now view every account, change someone's role, or deactivate a login — all from one screen.</p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+              <h3 data-i18n="whatsNew.v110Item3Title">Export your fault log</h3>
+              <p data-i18n="whatsNew.v110Item3Body">Download the fault log as CSV, Excel or PDF, or print it directly — available to engineers, supervisors, managers and administrators.</p>
+            </div>
+
+          </div>
+
+          <h2 data-i18n="whatsNew.v100Heading">v1.0.0 — Initial release</h2>
+
+          <div class="security-grid">
+
+            <div class="feature-card">
+              <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg></div>
+              <h3 data-i18n="whatsNew.item1Title">AI-powered fault diagnosis</h3>
+              <p data-i18n="whatsNew.item1Body">Describe your issue or upload a photo and get an instant, step-by-step diagnosis to guide your troubleshooting.</p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="6" width="14" height="15" rx="2"/><path d="M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1z"/><path d="M9 12h6M9 16h6"/></svg></div>
+              <h3 data-i18n="whatsNew.item2Title">Four request types</h3>
+              <p data-i18n="whatsNew.item2Body">Report a fault, log an installation and commissioning job, request after-sales support, or get help with an application or process issue — all from one form.</p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="5"/><rect x="12" y="8" width="3" height="9"/><rect x="17" y="5" width="3" height="12"/></svg></div>
+              <h3 data-i18n="whatsNew.item3Title">Fault log and tracking</h3>
+              <p data-i18n="whatsNew.item3Body">Every report you submit is saved with a status — open, in progress or resolved — plus root-cause tracking and resolution notes.</p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 18H6a4 4 0 0 1-1-7.87 5.5 5.5 0 0 1 10.6-2.13A4.5 4.5 0 0 1 17 18z"/><line x1="2" y1="2" x2="22" y2="22"/></svg></div>
+              <h3 data-i18n="whatsNew.item4Title">Works offline</h3>
+              <p data-i18n="whatsNew.item4Body">No internet? No problem. Fault reports are stored on your device and sync automatically once you're back online.</p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></div>
+              <h3 data-i18n="whatsNew.item5Title">Multi-language support</h3>
+              <p data-i18n="whatsNew.item5Body">Use Tervexa in English, French, Spanish, Portuguese or Swahili, with AI diagnosis delivered in the same language.</p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2 2.5-2.5z"/></svg></div>
+              <h3 data-i18n="whatsNew.item6Title">Spare parts links</h3>
+              <p data-i18n="whatsNew.item6Body">Diagnosis results include direct links to verified spare parts suppliers, so you can order what you need right away.</p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+              <h3 data-i18n="whatsNew.item7Title">Ask AI</h3>
+              <p data-i18n="whatsNew.item7Body">A dedicated chat for quick equipment questions that don't need a full report.</p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+              <h3 data-i18n="whatsNew.item8Title">Role-based accounts</h3>
+              <p data-i18n="whatsNew.item8Body">Sign up as a technician, application specialist, engineer, supervisor, manager or administrator — Tervexa adapts to your role.</p>
+            </div>
+
+          </div>
+
+          <p data-i18n="whatsNew.closingNote">More features and languages are on the way. Check back here for updates.</p>
+
+        </div>
+    </main>
+
+    <footer>
+      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html" data-i18n="footer.privacy">Privacy</a><span class="footer-sep">|</span><a href="terms.html" data-i18n="footer.terms">Terms</a><span class="footer-sep">|</span><a href="security.html" data-i18n="footer.security">Security</a><span class="footer-sep">|</span><a href="help.html" data-i18n="footer.help">Help</a><span class="footer-sep">|</span><a href="whats-new.html">v1.1.0</a></p>
+    </footer>
+
+<script src="js/i18n.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

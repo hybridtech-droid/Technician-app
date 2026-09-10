@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help &amp; Support - Tervexa</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="decorated-bg">
+
+    <header>
+        <nav>
+            <span class="brand">Tervexa</span>
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">☰</button>
+            <div class="nav-links">
+              <a href="index.html" data-i18n="nav.home">Home</a>
+              <a href="about.html" data-i18n="nav.about">About</a>
+              <a href="fault-report.html" data-i18n="nav.reportFault">Report a fault</a>
+              <a href="fault-log.html" data-i18n="nav.faultLog">Fault log</a>
+              <a href="chat.html" data-i18n="nav.askAI">Ask AI</a>
+              <a href="admin.html" data-i18n="nav.admin" hidden>Admin</a>
+              <a href="login.html" data-i18n="nav.login">Login</a>
+              <a href="signup.html" data-i18n="nav.signup">Sign up</a>
+            </div>
+            <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language">
+                <option value="en">English</option>
+                <option value="fr">Français</option>
+                <option value="es">Español</option>
+                <option value="de">Deutsch</option>
+                <option value="pt">Português</option>
+                <option value="ar">العربية</option>
+                <option value="zh">中文</option>
+                <option value="hi">हिन्दी</option>
+                <option value="sw">Kiswahili</option>
+                <option value="ru">Русский</option>
+                <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+                <option value="sv">Svenska</option>
+            </select>
+        </nav>
+    </header>
+
+    <main>
+        <div class="page-card about-card legal-card">
+
+          <div class="page-card-header">
+            <div class="page-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2 2-2 3.5"/><line x1="12" y1="17.5" x2="12.01" y2="17.5"/></svg></div>
+            <div class="page-card-header-text">
+              <h1 data-i18n="help.pageTitle">Help &amp; Support</h1>
+              <p data-i18n="help.intro">Answers to common questions about using Tervexa. Cannot find what you need? Reach out to us directly.</p>
+            </div>
+          </div>
+
+          <div class="faq-list">
+
+            <div class="faq-item">
+              <h3 data-i18n="help.q1">How do I report a fault?</h3>
+              <p data-i18n="help.a1">Go to "Report a fault" in the navigation menu, select the request type, fill in the equipment and site details, describe the issue, and optionally attach a photo. Submit the form and the AI will return a diagnosis.</p>
+            </div>
+
+            <div class="faq-item">
+              <h3 data-i18n="help.q2">How does the AI diagnosis work?</h3>
+              <p data-i18n="help.a2">Tervexa's AI analyses your description and any photos you provide, and returns a step-by-step diagnosis. This is a starting point for troubleshooting — always have a qualified engineer verify it before taking action, especially on safety-critical equipment.</p>
+            </div>
+
+            <div class="faq-item">
+              <h3 data-i18n="help.q3">Can I use Tervexa without an internet connection?</h3>
+              <p data-i18n="help.a3">Yes. Fault reports you create while offline are stored securely on your device and automatically synced to your account once you are back online.</p>
+            </div>
+
+            <div class="faq-item">
+              <h3 data-i18n="help.q4">How do I change the app language?</h3>
+              <p data-i18n="help.a4">Use the language selector in the top navigation bar. Once you are logged in, your preference is saved to your account, so the app opens in your chosen language every time.</p>
+            </div>
+
+            <div class="faq-item">
+              <h3 data-i18n="help.q5">I forgot my password. What do I do?</h3>
+              <p data-i18n="help.a5">Go to the login page and select "Reset password". Enter your registered email address and we will send you a secure link to create a new password.</p>
+            </div>
+
+            <div class="faq-item">
+              <h3 data-i18n="help.q6">Where can I find my past reports?</h3>
+              <p data-i18n="help.a6">Visit "Fault log" to see every report you have submitted, filter by status or request type, and review the AI diagnosis and resolution for each one.</p>
+            </div>
+
+            <div class="faq-item">
+              <h3 data-i18n="help.q7">How do I get spare parts for the equipment I am working on?</h3>
+              <p data-i18n="help.a7">Diagnosis results include direct links to verified spare parts suppliers where relevant, so you can order what you need without leaving the app.</p>
+            </div>
+
+          </div>
+
+          <div class="about-cta">
+            <h2 data-i18n="help.q8">Still need help?</h2>
+            <p data-i18n="help.a8">Email us at luckyvictor3@gmail.com and we will get back to you.</p>
+            <a href="mailto:luckyvictor3@gmail.com" class="btn-white"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg> <span data-i18n="about.emailButton">Email us</span></a>
+          </div>
+
+        </div>
+    </main>
+
+    <footer>
+      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html" data-i18n="footer.privacy">Privacy</a><span class="footer-sep">|</span><a href="terms.html" data-i18n="footer.terms">Terms</a><span class="footer-sep">|</span><a href="security.html" data-i18n="footer.security">Security</a><span class="footer-sep">|</span><a href="help.html" data-i18n="footer.help">Help</a><span class="footer-sep">|</span><a href="whats-new.html">v1.1.0</a></p>
+    </footer>
+
+<script src="js/i18n.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

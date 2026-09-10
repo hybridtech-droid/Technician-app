@@ -7,9 +7,14 @@ const crypto = require('crypto');
 const Anthropic = require('@anthropic-ai/sdk');
 const rateLimit = require('express-rate-limit');
 const db = require('./db');
+const { getEquipmentKnowledge } = require('./equipment-knowledge');
 const session = require('express-session');
+const buildSqliteSessionStore = require('./sqlite-session-store');
 const bcrypt = require('bcrypt');
+const ExcelJS = require('exceljs');
+const PDFDocument = require('pdfkit');
 const { normalizePhone } = require('./phone');
+const payments = require('./payments');
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
@@ -71,9 +76,25 @@ function languageInstruction(code) {
   return ' Respond entirely in ' + name + ', regardless of what language the input is written in.';
 }
 
-app.use(express.json({ limit: '10mb'}));
+// The `verify` callback stashes the exact raw request bytes on req.rawBody
+// alongside the normal parsed req.body. Nothing needed that before now —
+// but a payment provider's webhook signature is computed over the raw
+// bytes it sent, and re-serializing the parsed JSON (JSON.stringify(req.body))
+// isn't guaranteed to produce an identical byte-for-byte string (key
+// order, spacing), which silently breaks signature verification. Capturing
+// the real bytes here means every webhook handler can verify correctly
+// without needing its own separate body-parsing middleware.
+app.use(express.json({
+  limit: '10mb',
+  verify: function (req, res, buf) {
+    req.rawBody = buf;
+  }
+}));
+
+const SqliteSessionStore = buildSqliteSessionStore(session.Store);
 
 app.use(session({
+  store: new SqliteSessionStore({ client: db }),
   secret: process.env.SESSION_SECRET || 'change-this-in-production',
   resave: false,
   saveUninitialized: false,
@@ -92,14 +113,42 @@ app.use(session({
 // logged in — that's what caused the "flash of the page, then bounced
 // to login" behaviour. Checking the session here means a logged-out
 // visit never renders the page at all; it's just a clean redirect.
-const protectedPages = ['/fault-report.html', '/fault-log.html', '/chat.html'];
+const protectedPages = ['/fault-report.html', '/fault-log.html', '/chat.html', '/admin.html', '/billing.html'];
 
 app.get(protectedPages, function (req, res, next) {
-  if (req.session && req.session.userId) {
+  if (req.session && req.session.userId && isActiveUser(req.session.userId)) {
     return next();
   }
 
+  if (req.session && req.session.userId) {
+    // A deactivated account with a still-live session cookie — clear the
+    // session rather than leaving a dead one behind.
+    req.session.destroy(function () {});
+  }
+
   res.redirect('/login.html');
+});
+
+// fault-report.html additionally needs a field-facing role — supervisors,
+// managers and admins manage the log rather than submit to it. Anyone
+// logged in but not allowed to submit gets sent to the log instead of a
+// dead end.
+app.get('/fault-report.html', function (req, res, next) {
+  if (submitReportRoles.includes(req.session.role)) {
+    return next();
+  }
+
+  res.redirect('/fault-log.html');
+});
+
+// admin.html and billing.html are administrator-only — billing doubly so,
+// since it's the page that can actually spend the company's money.
+app.get(['/admin.html', '/billing.html'], function (req, res, next) {
+  if (adminRoles.includes(req.session.role)) {
+    return next();
+  }
+
+  res.redirect('/fault-log.html');
 });
 
 app.use(express.static('.'));
@@ -109,32 +158,378 @@ const aiLimiter = rateLimit({
   max: 60,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many requests. Please wait a while and try again.' }
+  message: { error: 'Too many requests. Please wait a while and try again.' },
+  // Both routes this is applied to (/api/diagnose, /api/chat) run
+  // requireAuth first, so req.session.userId is always set by the time
+  // this runs. Keying by user instead of by IP means the limit follows
+  // each technician individually — several people diagnosing faults from
+  // the same office/site Wi-Fi no longer share one bucket and throttle
+  // each other out.
+  keyGenerator: function (req) {
+    return 'user:' + req.session.userId;
+  }
 });
 
 // Separate, tighter limiter for auth endpoints so a login/signup script
-// can't be hammered the way the AI endpoints can.
+// can't be hammered the way the AI endpoints can. There's no logged-in
+// user yet at this point, so this can't key by userId the way aiLimiter
+// does — instead it keys by IP *plus* whichever account identifier the
+// request names (email for signup/login/request-password-reset, the reset
+// token for reset-password). That keeps the original point of this limiter
+// intact (repeated attempts against one account from one place still get
+// capped) while fixing the false-positive case: several technicians
+// logging into their own separate accounts from the same office IP no
+// longer share a bucket and lock each other out.
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many attempts. Please wait a while and try again.' }
+  message: { error: 'Too many attempts. Please wait a while and try again.' },
+  keyGenerator: function (req) {
+    // Newer express-rate-limit versions require IPv6 addresses to go
+    // through their ipKeyGenerator helper whenever a custom keyGenerator
+    // touches req.ip — a raw IPv6 address has far too many equivalent
+    // forms for one person to be usable as a rate-limit key directly, so
+    // the helper collapses it to a fixed-size subnet first. Older
+    // versions (this project's package.json range can resolve to either)
+    // don't export that helper, so fall back to the raw IP there — it's
+    // still correct for IPv4, which is what local/LAN testing uses.
+    const ipPart = (typeof rateLimit.ipKeyGenerator === 'function') ? rateLimit.ipKeyGenerator(req.ip) : req.ip;
+    const identifier = ((req.body && (req.body.email || req.body.token)) || '').toString().toLowerCase().slice(0, 200);
+    return identifier ? ipPart + ':' + identifier : ipPart;
+  }
 });
 
+// Checked on every already-authenticated request, not just at login — an
+// administrator deactivating someone should take effect right away, even
+// for a browser tab that's already logged in with a live session cookie.
+// A plain synchronous point lookup on an indexed primary key, so this is
+// cheap enough to do on every request.
+function isActiveUser(userId) {
+  const row = db.prepare('SELECT active FROM users WHERE id = ?').get(userId);
+  return Boolean(row) && row.active !== 0;
+}
+
 function requireAuth(req, res, next) {
-  if (req.session && req.session.userId) {
+  if (req.session && req.session.userId && isActiveUser(req.session.userId)) {
     return next();
+  }
+
+  if (req.session && req.session.userId) {
+    // Session cookie is for a real, but now-deactivated, account — clear
+    // it rather than leaving a dead session hanging around.
+    req.session.destroy(function () {});
   }
 
   res.status(401).json({ error: 'You must be logged in.' });
 }
 
-// Only these roles get scoped to their own reports. Everyone else
-// (engineer, supervisor, manager, admin) still sees the full log — there's
-// no "site" or "team" concept in the data model yet, so that's as far as
-// role-based visibility goes for now.
-const ownReportsOnlyRoles = ['technician', 'field-application-specialist'];
+// --- Role tiers -------------------------------------------------------
+// The six roles offered on the signup form aren't just a label — each of
+// these lists is a real permission boundary, checked server-side on the
+// relevant route (never trust a client-side-only check for any of this).
+//
+//  - Field technician / Field application specialist: can only see, edit
+//    and resolve reports THEY submitted. Can submit new reports.
+//  - Engineer: can see every report (useful for cross-site troubleshooting
+//    context) but can only edit/resolve their OWN — same edit boundary as
+//    technician/FAS, just with read visibility into everyone else's too.
+//    Can submit new reports.
+//  - Site supervisor: can see and edit/resolve every report. Cannot submit
+//    new reports (submission is a field-role action), delete a report, or
+//    reach the admin panel.
+//  - Maintenance manager: same as supervisor, plus can permanently delete
+//    a report.
+//  - Administrator: same as manager, plus the only role with access to the
+//    admin panel (manage accounts: change a role, activate/deactivate a
+//    login). Can also submit reports — unlike supervisor/manager, this
+//    isn't a field-role action for admin, because an 'individual' signup
+//    (a one-person company, see POST /api/signup) always lands as admin
+//    with no other role available, and that person still needs to be able
+//    to file their own fault reports; a company admin choosing to file one
+//    too is a harmless superset of what they could already do everywhere
+//    else.
+//
+// There's still no "site" or "team" concept in the data model — "can see
+// every report" really does mean the whole company's fault log, for every
+// role above technician/FAS's own-report visibility boundary.
+//
+// Note view and edit are two different boundaries: technician/FAS are
+// restricted on BOTH (they can't even see someone else's report); engineer
+// is restricted on edit only (sees everything, but can only change their
+// own).
+const viewOwnReportsOnlyRoles = ['technician', 'field-application-specialist'];
+const editAnyReportRoles = ['supervisor', 'manager', 'admin'];
+const deleteReportRoles = ['manager', 'admin'];
+const submitReportRoles = ['technician', 'field-application-specialist', 'engineer', 'admin'];
+const exportReportsRoles = ['engineer', 'supervisor', 'manager', 'admin'];
+const adminRoles = ['admin'];
+
+// Maps each field-facing role to the request types that fall inside their
+// normal scope of work — the request-type picker on fault-report.html
+// defaults to just these for that role, and the fault log is filtered the
+// same way, so nobody's wading through report types that aren't theirs to
+// handle. A role with no entry here (supervisor, manager, admin) is never
+// scoped: those roles manage or administer across every field rather than
+// owning one, so restricting them would work against the job.
+//
+// The overlap on 'after-sales' between engineer and field-application-
+// specialist is intentional — after-sales support commonly needs both
+// hands-on repair knowledge and application/process knowledge, and which
+// role actually owns it varies by company.
+//
+// This is a UX default, not the security boundary on its own — see
+// hybridMode below and its enforcement in POST/GET /api/reports.
+const ROLE_REQUEST_TYPES = {
+  technician: ['fault'],
+  engineer: ['fault', 'installation', 'after-sales'],
+  'field-application-specialist': ['application', 'after-sales']
+};
+
+function requireRole(allowedRoles) {
+  return function (req, res, next) {
+    if (req.session && allowedRoles.includes(req.session.role)) {
+      return next();
+    }
+
+    res.status(403).json({ error: 'Your account does not have access to this.' });
+  };
+}
+
+// --- Plan tiers (foundation for billing — nothing here is enforced yet) --
+// The single place tier shape lives, so pricing/limits can change without
+// a migration (companies only ever store the tier NAME — see planTier on
+// the companies table in db.js). seatLimit/monthlyReportLimit are null for
+// "unlimited". Seats and features scale with company size/ability to pay
+// (the predictable, fair lever); the report cap only bites on the free
+// tier, to bound AI-diagnosis cost exposure on a plan nobody's paying for
+// — paying tiers are never usage-capped, so upgrading never feels like
+// trading one limit for another. Every existing company was grandfathered
+// onto 'pro' when this was introduced (see the db.js migration).
+//
+// graceSeats/graceReports define a soft buffer above seatLimit/
+// monthlyReportLimit: a company between the limit and limit+grace can
+// still work (checkSeatLimit/checkReportLimit below return allowed:true,
+// overLimit:true so the UI can show a warning), and only gets hard-blocked
+// once it reaches limit+grace. A null seatLimit/monthlyReportLimit means
+// "unlimited" and skips enforcement entirely — grace doesn't apply.
+const PLAN_TIERS = {
+  free: {
+    label: 'Free',
+    seatLimit: 3,
+    graceSeats: 1,
+    monthlyReportLimit: 15,
+    graceReports: 5,
+    exportFormats: ['csv'],
+    adminAddedEmployees: false,
+    auditLog: false
+  },
+  pro: {
+    label: 'Pro',
+    seatLimit: 20,
+    graceSeats: 2,
+    monthlyReportLimit: null,
+    graceReports: 0,
+    exportFormats: ['csv', 'xlsx', 'pdf'],
+    adminAddedEmployees: true,
+    auditLog: true
+  },
+  enterprise: {
+    label: 'Enterprise',
+    seatLimit: null,
+    graceSeats: 0,
+    monthlyReportLimit: null,
+    graceReports: 0,
+    exportFormats: ['csv', 'xlsx', 'pdf'],
+    adminAddedEmployees: true,
+    auditLog: true
+  },
+  // Not a purchasable tier — never listed on /api/billing/plans and the
+  // checkout endpoint only ever accepts 'pro'/'enterprise' as a planTier,
+  // so nobody can buy their way onto this one. It exists purely for an
+  // account someone (the app's own operator, a comped partner) is put on
+  // by hand, directly in the database — see set-unlimited-plan.js.
+  unlimited: {
+    label: 'Unlimited',
+    seatLimit: null,
+    graceSeats: 0,
+    monthlyReportLimit: null,
+    graceReports: 0,
+    exportFormats: ['csv', 'xlsx', 'pdf'],
+    adminAddedEmployees: true,
+    auditLog: true
+  }
+};
+
+function planLimitsFor(planTier) {
+  return PLAN_TIERS[planTier] || PLAN_TIERS.free;
+}
+
+// Individual (solo) signups share whichever tier's report limit and
+// features they're on, but always keep their own, tighter seat cap — 1,
+// not whatever that tier would normally allow — since by definition it's
+// one person, on the free tier or Pro alike ("still with the only seat",
+// per how individual Pro pricing was specified). The one exception is
+// 'unlimited' (see set-unlimited-plan.js): that's a manual, no-limits
+// override applied by hand and is never affected by account type.
+function effectiveLimitsFor(companyRow) {
+  const planTier = (companyRow && companyRow.planTier) || 'free';
+  const limits = Object.assign({}, planLimitsFor(planTier));
+  if (companyRow && companyRow.isIndividual && planTier !== 'unlimited') {
+    limits.seatLimit = 1;
+    limits.graceSeats = 0;
+  }
+  return limits;
+}
+
+// 'individual' vs 'company' — the axis payments/config.js prices and
+// tiers by (an individual account never has an Enterprise option, and
+// pays a different Pro price than a company — see PLAN_PRICING there).
+function accountTypeFor(companyRow) {
+  return (companyRow && companyRow.isIndividual) ? 'individual' : 'company';
+}
+
+const INDIVIDUAL_TRIAL_DAYS = 14;
+const COMPANY_TRIAL_DAYS = 30;
+
+function trialEndsAtFor(days, fromISO) {
+  return new Date(new Date(fromISO).getTime() + days * 24 * 60 * 60 * 1000).toISOString();
+}
+
+// A company is "on trial" only if it's still on the free tier AND has a
+// trialEndsAt set at all — a NULL trialEndsAt (every company created
+// before this feature existed) means there's nothing to expire, so it
+// keeps working exactly as it always has. Upgrading off free tier makes
+// the trial irrelevant too, even if trialEndsAt is still sitting there
+// from before the upgrade.
+function trialStatusFor(companyRow) {
+  const planTier = (companyRow && companyRow.planTier) || 'free';
+  const trialEndsAt = companyRow && companyRow.trialEndsAt;
+  if (planTier !== 'free' || !trialEndsAt) {
+    return { onTrial: false, expired: false, trialEndsAt: null };
+  }
+  const expired = new Date(trialEndsAt).getTime() < Date.now();
+  return { onTrial: true, expired: expired, trialEndsAt: trialEndsAt };
+}
+
+// The two enforcement checks — one per limit that actually varies by
+// tier. Both return { allowed, overLimit, message? }: allowed is what a
+// caller should actually act on (block the request when false); overLimit
+// on its own (allowed:true, overLimit:true) means "let it through, but
+// tell the admin they're in the grace window" so the UI can show a
+// warning ahead of the real block. A null limit always short-circuits to
+// allowed:true — there's nothing to enforce.
+function checkSeatLimit(companyId) {
+  const companyRow = db.prepare('SELECT planTier, isIndividual, trialEndsAt FROM companies WHERE id = ?').get(companyId);
+
+  const trial = trialStatusFor(companyRow);
+  if (trial.expired) {
+    return {
+      allowed: false,
+      overLimit: true,
+      message: 'Your free trial ended on ' + trial.trialEndsAt.slice(0, 10) + '. Upgrade to Pro or Enterprise to add more people.'
+    };
+  }
+
+  const limits = effectiveLimitsFor(companyRow);
+
+  if (limits.seatLimit === null) {
+    return { allowed: true, overLimit: false };
+  }
+
+  const seatCount = db.prepare('SELECT COUNT(*) AS count FROM users WHERE companyId = ? AND active = 1').get(companyId).count;
+  const hardCap = limits.seatLimit + (limits.graceSeats || 0);
+
+  if (seatCount >= hardCap) {
+    return {
+      allowed: false,
+      overLimit: true,
+      message: 'Your ' + limits.label + ' plan is full at ' + seatCount + ' active seats. Upgrade your plan to add more.'
+    };
+  }
+
+  if (seatCount >= limits.seatLimit) {
+    return {
+      allowed: true,
+      overLimit: true,
+      message: 'You are over your ' + limits.label + ' plan\'s seat limit (' + limits.seatLimit + '). A few more will still work, then new ones will be blocked until you upgrade.'
+    };
+  }
+
+  return { allowed: true, overLimit: false };
+}
+
+function checkReportLimit(companyId) {
+  const companyRow = db.prepare('SELECT planTier, isIndividual, trialEndsAt FROM companies WHERE id = ?').get(companyId);
+
+  const trial = trialStatusFor(companyRow);
+  if (trial.expired) {
+    return {
+      allowed: false,
+      overLimit: true,
+      message: 'Your free trial ended on ' + trial.trialEndsAt.slice(0, 10) + '. Upgrade to Pro or Enterprise to keep submitting reports.'
+    };
+  }
+
+  const limits = effectiveLimitsFor(companyRow);
+
+  if (limits.monthlyReportLimit === null) {
+    return { allowed: true, overLimit: false };
+  }
+
+  const monthPrefix = new Date().toISOString().slice(0, 7);
+  const reportsThisMonth = db.prepare(
+    "SELECT COUNT(*) AS count FROM reports WHERE companyId = ? AND date LIKE ?"
+  ).get(companyId, monthPrefix + '%').count;
+
+  const hardCap = limits.monthlyReportLimit + (limits.graceReports || 0);
+
+  if (reportsThisMonth >= hardCap) {
+    return {
+      allowed: false,
+      overLimit: true,
+      message: 'Your ' + limits.label + ' plan\'s monthly report limit (' + limits.monthlyReportLimit + ') has been reached. Upgrade your plan to keep submitting reports this month.'
+    };
+  }
+
+  if (reportsThisMonth >= limits.monthlyReportLimit) {
+    return {
+      allowed: true,
+      overLimit: true,
+      message: 'You are over your ' + limits.label + ' plan\'s monthly report limit (' + limits.monthlyReportLimit + '). A few more will still go through, then new ones will be blocked until next month or an upgrade.'
+    };
+  }
+
+  return { allowed: true, overLimit: false };
+}
+
+// Records one sensitive account-management action for a company's audit
+// trail. actorEmail/targetEmail are captured as plain text at the time of
+// the action (not looked up live later) so the log still reads sensibly
+// even after an account is deleted or its email changes. details is a
+// short human-readable note, not structured data — this is a log meant to
+// be read, not queried.
+function logAudit(companyId, actor, action, target, details) {
+  try {
+    db.prepare(`
+      INSERT INTO auditLog (companyId, actorUserId, actorEmail, action, targetUserId, targetEmail, details, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      companyId,
+      actor ? actor.id : null,
+      actor ? actor.email : null,
+      action,
+      target ? target.id : null,
+      target ? target.email : null,
+      details || '',
+      new Date().toISOString()
+    );
+  } catch (err) {
+    // Never let a logging failure break the action it's logging.
+    console.error('Audit log write failed:', err.message);
+  }
+}
 
 // Whitelists matching the actual <option value="..."> sets in the HTML
 // forms, so a direct API call can't slip in a value the UI never offers
@@ -142,6 +537,12 @@ const ownReportsOnlyRoles = ['technician', 'field-application-specialist'];
 const VALID_REQUEST_TYPES = ['fault', 'installation', 'after-sales', 'application'];
 const VALID_REPORT_STATUSES = ['Open', 'In progress', 'Resolved'];
 const VALID_ROLES = ['technician', 'field-application-specialist', 'engineer', 'supervisor', 'manager', 'admin'];
+
+// Signing up to JOIN an existing company can't hand out the admin role —
+// that's the whole point of closing the self-escalation gap: the only way
+// to become an admin is to be the one creating the company, or to already
+// be an admin who promotes someone else from the admin panel.
+const JOIN_SIGNUP_ROLES = VALID_ROLES.filter(function (r) { return r !== 'admin'; });
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -159,6 +560,53 @@ function passwordError(password) {
   }
 
   return null;
+}
+
+// Shared by "create a new company" signup and the admin panel's "regenerate
+// invite code" action. No 0/O or 1/I — easy to misread when a code gets
+// read out loud over a phone call, which is exactly how a lot of these will
+// actually get shared with a new employee.
+function generateInviteCodeCandidate() {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += alphabet[crypto.randomInt(alphabet.length)];
+  }
+  return code;
+}
+
+// Retries on the (extremely unlikely, 1-in-32^8) chance of a collision
+// rather than trusting probability with something that has to be unique.
+function generateUniqueInviteCode() {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const code = generateInviteCodeCandidate();
+    const existing = db.prepare('SELECT id FROM companies WHERE inviteCode = ?').get(code);
+    if (!existing) {
+      return code;
+    }
+  }
+  throw new Error('Could not generate a unique invite code.');
+}
+
+// A temporary password for an account the admin panel creates directly —
+// random, and re-rolled until it actually satisfies passwordError() so it's
+// never rejected as "not a valid password" the one time it matters. The
+// employee is required to replace it with one of their own choosing on
+// first login (see mustChangePassword).
+function generateTempPassword() {
+  const alphabet = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  for (let attempt = 0; attempt < 20; attempt++) {
+    let pw = '';
+    for (let i = 0; i < 10; i++) {
+      pw += alphabet[crypto.randomInt(alphabet.length)];
+    }
+    if (!passwordError(pw)) {
+      return pw;
+    }
+  }
+  // Practically unreachable given the alphabet above, but guaranteed to
+  // pass passwordError() if it's ever hit.
+  return 'Tvx' + crypto.randomInt(100000, 999999) + 'x';
 }
 
 // No email provider is configured yet — this keeps the reset flow fully
@@ -208,18 +656,49 @@ app.get('/api/health', function (req, res) {
 // Lets the frontend ask "is anyone logged in, and who" on page load,
 // so pages can redirect to login.html or show a logged-in-as control.
 app.get('/api/me', function (req, res) {
-  if (req.session && req.session.userId) {
+  if (req.session && req.session.userId && isActiveUser(req.session.userId)) {
+    const companyRow = req.session.companyId
+      ? db.prepare('SELECT name FROM companies WHERE id = ?').get(req.session.companyId)
+      : null;
+
     return res.json({
       loggedIn: true,
       email: req.session.email,
       fullName: req.session.fullName,
       role: req.session.role,
+      companyName: companyRow ? companyRow.name : '',
       preferredLanguage: req.session.preferredLanguage || 'en',
-      uiTranslatedLanguages: UI_TRANSLATED_LANGUAGES
+      uiTranslatedLanguages: UI_TRANSLATED_LANGUAGES,
+      hybridMode: Boolean(req.session.hybridMode),
+      // null means "not scoped at all" (supervisor/manager/admin) rather
+      // than "scoped to nothing" — the frontend treats null as "show every
+      // request type", same as hybridMode: true.
+      allowedRequestTypes: ROLE_REQUEST_TYPES[req.session.role] || null
     });
   }
 
+  if (req.session && req.session.userId) {
+    req.session.destroy(function () {});
+  }
+
   res.json({ loggedIn: false, uiTranslatedLanguages: UI_TRANSLATED_LANGUAGES });
+});
+
+// Lets a field-facing account switch between the scoped view (just their
+// role's request types) and a hybrid view (everything) — for people whose
+// job genuinely spans more than one field. Persisted on the account, not
+// just this browser, so it follows them the way preferredLanguage does.
+app.post('/api/hybrid-mode', requireAuth, function (req, res) {
+  const enabled = Boolean(req.body && req.body.enabled);
+
+  try {
+    db.prepare('UPDATE users SET hybridMode = ? WHERE id = ?').run(enabled ? 1 : 0, req.session.userId);
+    req.session.hybridMode = enabled;
+    res.json({ ok: true, hybridMode: enabled });
+  } catch (err) {
+    console.error('Could not save hybrid mode:', err.message);
+    res.status(500).json({ error: 'Could not save hybrid mode preference.' });
+  }
 });
 
 // Lets a logged-in page save a language choice to the account itself, not
@@ -307,11 +786,55 @@ function buildDiagnosisPrompt(fields) {
       'Recurrence: ' + recurring + '\n';
   }
 
+  // Equipment-specific background, when the report's own text matches a
+  // known subsystem — see equipment-knowledge.js. It's context for the
+  // model to reason from, not something to be echoed back verbatim, hence
+  // the instruction below.
+  const knowledgeNotes = getEquipmentKnowledge(equipment, [description, faultType, applicationImpact].filter(Boolean).join(' '));
+  const knowledgeBlock = knowledgeNotes.length
+    ? '\n\nBackground on this equipment\'s common failure patterns (use this to inform your reasoning — do not quote it back, write the diagnosis in your own words):\n' +
+      knowledgeNotes.map(function (note, i) { return (i + 1) + '. ' + note; }).join('\n') + '\n'
+    : '';
+
   return brief + '\n\n' +
     context +
-    'Reported: ' + description + '\n\n' +
+    'Reported: ' + description + '\n' +
+    knowledgeBlock + '\n' +
     'Keep it under 200 words. Write in plain prose with no Markdown formatting — no asterisks, hashes, or bullet symbols. ' +
     'Note any safety precautions first if they apply.' + photoNote + languageInstruction(language);
+}
+
+// Every non-streaming Anthropic call in this file used to grab the reply
+// text with `message.content[0].text` — that assumes the first content
+// block exists AND is a text block, which isn't always true (an empty
+// content array, or a non-text block landing first, both happen in the
+// wild and previously crashed with an unhelpful "Cannot read properties
+// of undefined (reading 'text')"). This finds the first actual text block
+// instead of assuming position 0, and throws a message that says what
+// really went wrong (stop reason, content shape) so it's diagnosable from
+// the server log rather than a bare TypeError.
+function extractText(message) {
+  const block = message && Array.isArray(message.content)
+    ? message.content.find(function (b) { return b && b.type === 'text' && typeof b.text === 'string'; })
+    : null;
+
+  if (block) {
+    return block.text;
+  }
+
+  const shape = message && Array.isArray(message.content)
+    ? message.content.map(function (b) { return b && b.type; }).join(',')
+    : typeof (message && message.content);
+
+  const err = new Error('Model response had no text content (stop_reason: ' + (message && message.stop_reason) + ', content: [' + shape + '])');
+  // stop_reason "refusal" means the model itself declined to answer this
+  // specific input (a safety/content judgment call, not a bug or outage) —
+  // callers can check this to show something more accurate than a generic
+  // "service unavailable" message.
+  if (message && message.stop_reason === 'refusal') {
+    err.isRefusal = true;
+  }
+  throw err;
 }
 
 // photo, if provided, is { data: base64String, mediaType: 'image/jpeg' }.
@@ -339,9 +862,22 @@ async function runDiagnosis(fields, photo) {
     messages: [{ role: 'user', content: content }]
   });
 
-  return message.content[0].text;
+  return extractText(message);
 }
 
+// Streamed rather than a single JSON response — the model still takes
+// however long it takes to finish the full ~500-token diagnosis, but a
+// technician standing at a fault site sees words start appearing within
+// well under a second instead of staring at "Analysing your report..." for
+// the entire generation. Content-Type stays plain text on purpose: this is
+// a raw incremental body, not an SSE event stream, so the frontend just
+// reads it as chunks come in (see getDiagnosis() in js/main.js) rather than
+// parsing "data: ..." frames.
+//
+// This route builds the request itself instead of calling runDiagnosis()
+// (kept as-is, non-streaming) because the WhatsApp fault-report flow reuses
+// that same function and only ever wants the finished text to send as one
+// message — there's no "stream words into a chat bubble" equivalent there.
 app.post('/api/diagnose', requireAuth, aiLimiter, async function (req, res) {
   const { description, photo } = req.body;
 
@@ -349,12 +885,122 @@ app.post('/api/diagnose', requireAuth, aiLimiter, async function (req, res) {
     return res.status(400).json({ error: 'Description too short.' });
   }
 
+  const prompt = buildDiagnosisPrompt(Object.assign({}, req.body, { hasPhoto: Boolean(photo && photo.data) }));
+  let content = [];
+
+  if (photo && photo.data) {
+    content.push({
+      type: 'image',
+      source: {
+        type: 'base64',
+        media_type: photo.mediaType,
+        data: photo.data
+      }
+    });
+  }
+
+  content.push({ type: 'text', text: prompt });
+
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+
   try {
-    const diagnosis = await runDiagnosis(req.body, photo);
-    res.json({ diagnosis: diagnosis });
+    const stream = anthropic.messages.stream({
+      model: 'claude-sonnet-4-5',
+      max_tokens: 500,
+      messages: [{ role: 'user', content: content }]
+    });
+
+    stream.on('text', function (textDelta) {
+      res.write(textDelta);
+    });
+
+    await stream.finalMessage();
+    res.end();
   } catch (err) {
     console.error('Anthropic error:', err.message);
-    res.status(500).json({ error: 'Diagnosis service unavailable.' });
+    // Streaming may have already started by the time the model errors out
+    // mid-generation — headers (and possibly some text) may already be on
+    // the wire, so a JSON error body is only possible if nothing was sent
+    // yet. Either way, ending the response is what lets the frontend's
+    // reader loop finish; a response that never sent any text reads as
+    // "diagnosis unavailable" client-side.
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Diagnosis service unavailable.' });
+    } else {
+      res.end();
+    }
+  }
+});
+
+// Rewrites the wording of the five FIXED resolution-guide steps (Prepare,
+// Inspect, Test, Resolve, Confirm) to match one specific report more
+// closely — it never changes the step count, order, or titles, and never
+// describes what's literally happening inside the equipment (see the
+// diag-anim comment block in js/main.js for why: a wrong-but-convincing
+// picture of real equipment internals is worse than a generic one). This
+// is purely a wording upgrade over buildGenericDiagSteps()'s client-side
+// fallback, so any failure here just means the frontend keeps showing the
+// generic version — nothing about the diagnosis itself depends on it.
+app.post('/api/diagnose/animate', requireAuth, aiLimiter, async function (req, res) {
+  const { requestType, equipment, faultType, applicationImpact, description, diagnosis, language } = req.body;
+
+  if (!description || !diagnosis) {
+    return res.status(400).json({ error: 'Missing description or diagnosis.' });
+  }
+
+  const brief =
+    'You write short step captions for a fixed 5-step field-service resolution guide shown to a technician. ' +
+    'The five steps are always, in this exact order: Prepare, Inspect, Test, Resolve, Confirm. ' +
+    'You are NOT describing the internal mechanics of the equipment and must not claim to show what is ' +
+    'physically happening inside it — you are giving practical, generic guidance for that step, phrased to fit ' +
+    'this specific report.';
+
+  let context =
+    'Request type: ' + (requestType || 'fault') + '\n' +
+    'Equipment: ' + (equipment || 'not specified') + '\n';
+
+  if (faultType) {
+    context += 'Fault category: ' + faultType + '\n';
+  }
+  if (applicationImpact) {
+    context += 'Affected area: ' + applicationImpact + '\n';
+  }
+
+  const knowledgeNotes = getEquipmentKnowledge(equipment, [description, diagnosis, faultType, applicationImpact].filter(Boolean).join(' '));
+  const knowledgeBlock = knowledgeNotes.length
+    ? '\n\nBackground on this equipment\'s common failure patterns (use this to make the captions more specific — do not quote it back):\n' +
+      knowledgeNotes.map(function (note, i) { return (i + 1) + '. ' + note; }).join('\n') + '\n'
+    : '';
+
+  const prompt = brief + '\n\n' +
+    context +
+    'Reported: ' + description + '\n\n' +
+    'Diagnosis given: ' + diagnosis + '\n' +
+    knowledgeBlock + '\n' +
+    'Reply with ONLY a JSON array of exactly 5 strings, one caption per step in the fixed order ' +
+    '[Prepare, Inspect, Test, Resolve, Confirm]. Each caption must be a single sentence, under 22 words, ' +
+    'plain prose with no Markdown, no step name prefix, no numbering. ' +
+    'No text before or after the JSON array.' + languageInstruction(language);
+
+  try {
+    const message = await anthropic.messages.create({
+      model: 'claude-sonnet-4-5',
+      max_tokens: 400,
+      messages: [{ role: 'user', content: [{ type: 'text', text: prompt }] }]
+    });
+
+    const raw = extractText(message).trim();
+    const jsonMatch = raw.match(/\[[\s\S]*\]/);
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+
+    if (!Array.isArray(parsed) || parsed.length !== 5 || !parsed.every(function (s) { return typeof s === 'string' && s.trim().length > 0; })) {
+      throw new Error('Malformed tailored step response');
+    }
+
+    res.json({ details: parsed.map(function (s) { return s.trim(); }) });
+  } catch (err) {
+    console.error('Diagnosis animation error:', err.message);
+    res.status(500).json({ error: 'Tailored resolution guide unavailable.' });
   }
 });
 
@@ -376,7 +1022,7 @@ async function runChat(messages, language) {
     messages: messages
   });
 
-  return reply.content[0].text;
+  return extractText(reply);
 }
 
 // One shared conversation history per account (see the chatMessages table
@@ -393,6 +1039,22 @@ function loadRecentChat(userId, limit) {
 
   return rows.reverse();
 }
+
+// Lets someone explicitly wipe their own account's shared conversation
+// (web + WhatsApp use the same thread — see loadRecentChat/saveChatMessage
+// above) and start over. Without this there's no way to stop old context
+// from being resent to the model on every new message — the chat always
+// carries every past exchange forward by design (see /api/conversation
+// GET above). Scoped to the requesting user only, never the whole table.
+app.delete('/api/conversation', requireAuth, function (req, res) {
+  try {
+    db.prepare('DELETE FROM chatMessages WHERE userId = ?').run(req.session.userId);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Could not clear conversation history:', err.message);
+    res.status(500).json({ error: 'Could not clear conversation.' });
+  }
+});
 
 app.post('/api/chat', requireAuth, aiLimiter, async function (req, res) {
   const { messages, language } = req.body;
@@ -426,8 +1088,349 @@ app.post('/api/chat', requireAuth, aiLimiter, async function (req, res) {
     res.json({ reply: replyText });
   } catch (err) {
     console.error('Chat error:', err.message);
+    // A refusal isn't an outage — the model looked at this specific
+    // message and declined to answer it, which is different from the
+    // service being down. Flagging it lets the frontend show something
+    // more accurate than "couldn't reach the assistant" (see
+    // common.assistantCouldNotRespond in js/i18n.js).
+    if (err.isRefusal) {
+      return res.status(422).json({ error: 'The assistant could not respond to that message.', refusal: true });
+    }
     res.status(500).json({ error: 'Chat service unavailable.' });
   }
+});
+
+// A small, shared label dictionary so an exported file reads the same way
+// the fault log table does, rather than showing raw option values like
+// "after-sales" or "component-failure". Kept in sync with prettyLabel() in
+// js/main.js by hand — there's no shared module between frontend and
+// backend to hang a single copy off of.
+const EXPORT_LABELS = {
+  electrical: 'Electrical', mechanical: 'Mechanical', electronic: 'Electronic and instrumentation',
+  hvac: 'HVAC and refrigeration', software: 'Software and controls', structural: 'Structural and civil',
+  biomedical: 'Biomedical', other: 'Other', critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low',
+  fault: 'Fault', installation: 'Installation', 'after-sales': 'After-sales', application: 'Application',
+  'under-1-month': 'Under 1 month', '1-6-months': '1 to 6 months', '6-12-months': '6 to 12 months',
+  '1-3-years': '1 to 3 years', 'over-3-years': 'Over 3 years', 'under-warranty': 'Under warranty',
+  'service-contract': 'Under service contract', expired: 'Expired', unknown: 'Not known',
+  'pre-site': 'Pre-site survey', delivery: 'Delivery and unpacking', assembly: 'Assembly and positioning',
+  connection: 'Power, water or network connection', calibration: 'Calibration and verification',
+  handover: 'Handover and sign-off', 'output-quality': 'Output or result quality', throughput: 'Throughput or speed',
+  contamination: 'Contamination or carryover', 'calibration-drift': 'Calibration or accuracy drift',
+  'user-technique': 'User technique or workflow', consumables: 'Consumables or reagents',
+  'first-time': 'First time observed', intermittent: 'Intermittent', consistent: 'Happens consistently',
+  consumable: 'Consumable or reagent', worsening: 'Getting worse over time', 'component-failure': 'Component failure',
+  wear: 'Normal wear', 'installation-error': 'Installation or setup error', 'user-error': 'User or operator error',
+  'power-supply': 'Power supply or environment', 'no-fault-found': 'No fault found'
+};
+
+function exportLabel(value) {
+  if (!value) return '';
+  return EXPORT_LABELS[value] || value;
+}
+
+const EXPORT_COLUMNS = [
+  { key: 'id', header: 'Report ID', width: 12 },
+  { key: 'technician', header: 'Reported by', width: 20 },
+  { key: 'reporterEmail', header: 'Reporter email', width: 24 },
+  { key: 'equipment', header: 'Equipment ID', width: 16 },
+  { key: 'location', header: 'Location', width: 18 },
+  { key: 'requestTypeLabel', header: 'Request type', width: 16 },
+  { key: 'typeLabel', header: 'Fault category', width: 22 },
+  { key: 'severityLabel', header: 'Severity', width: 12 },
+  { key: 'date', header: 'Date reported', width: 14 },
+  { key: 'status', header: 'Status', width: 14 },
+  { key: 'description', header: 'Description', width: 40 },
+  { key: 'diagnosis', header: 'AI diagnosis', width: 40 },
+  { key: 'rootCauseLabel', header: 'Root cause', width: 22 },
+  { key: 'resolvedDate', header: 'Resolved date', width: 14 },
+  { key: 'resolutionNotes', header: 'Resolution notes', width: 40 }
+];
+
+// Shared by every export path (bulk CSV/Excel/PDF and a single-report
+// download) so a report's resolution — root cause, resolved date and the
+// full resolution notes, not just a status word — always ends up in the
+// download the same way it's already stored, rather than each format
+// growing its own slightly different idea of "the report".
+function mapReportForExport(r) {
+  return {
+    id: r.id,
+    technician: r.technician || '',
+    reporterEmail: r.reporterEmail || '',
+    equipment: r.equipment || '',
+    location: r.location || '',
+    requestTypeLabel: exportLabel(r.requestType || 'fault'),
+    typeLabel: exportLabel(r.type),
+    severityLabel: exportLabel(r.severity),
+    date: r.date || '',
+    status: r.status || '',
+    description: r.description || '',
+    diagnosis: r.diagnosis || '',
+    rootCauseLabel: exportLabel(r.rootCause),
+    resolvedDate: r.resolvedDate || '',
+    resolutionNotes: r.resolutionNotes || ''
+  };
+}
+
+function reportsForExport(req) {
+  // Every role allowed to export (engineer/supervisor/manager/admin) also
+  // has full fault-log visibility — see exportReportsRoles / the comment
+  // on viewOwnReportsOnlyRoles above — so this always pulls the whole log,
+  // filtered the same way the fault log table's own status/type dropdowns
+  // do, so a download matches whatever the person was just looking at.
+  const status = req.query.status;
+  const requestType = req.query.requestType;
+
+  // reporterId scopes the export to one specific account's submissions —
+  // used by the admin panel's "export by employee" picker. Filtering by
+  // the account's numeric id (reports.userId), not the free-typed
+  // "technician" name field, for the same reason reporterEmail exists at
+  // all: two people can type the same name on the report form, but they
+  // can't share an account, so id is the only thing that actually tells
+  // them apart.
+  const reporterId = req.query.reporterId ? Number(req.query.reporterId) : null;
+
+  let rows = db.prepare(REPORTS_WITH_REPORTER_SELECT + ' WHERE reports.companyId = ? ORDER BY reports.rowid').all(req.session.companyId);
+
+  if (reporterId) {
+    rows = rows.filter(function (r) { return r.userId === reporterId; });
+  }
+
+  if (status && status !== 'all' && VALID_REPORT_STATUSES.includes(status)) {
+    rows = rows.filter(function (r) { return r.status === status; });
+  }
+
+  if (requestType && requestType !== 'all' && VALID_REQUEST_TYPES.includes(requestType)) {
+    rows = rows.filter(function (r) { return (r.requestType || 'fault') === requestType; });
+  }
+
+  return rows.map(mapReportForExport);
+}
+
+function csvCell(value) {
+  const s = (value === null || value === undefined) ? '' : String(value);
+  // Quote whenever the value could otherwise be misread — a comma, a
+  // quote, or a newline embedded in a description/resolution note.
+  if (/[",\n]/.test(s)) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+
+// Draws one report as a self-contained block — a header line, the request
+// meta, the description, the AI diagnosis, and (when present) the full
+// resolution: root cause, resolved date and the complete resolution notes.
+// Used for both the bulk PDF (one block per report, back to back) and the
+// single-report PDF (exactly one block) so the two never drift apart.
+function drawPdfReportBlock(doc, state, row) {
+  function ensureSpace(needed) {
+    if (state.y + needed > state.pageBottom) {
+      doc.addPage();
+      state.y = doc.page.margins.top;
+    }
+  }
+
+  function drawField(label, text, opts) {
+    opts = opts || {};
+
+    doc.font('Helvetica-Bold').fontSize(9).fillColor('#000000');
+    const labelHeight = doc.heightOfString(label, { width: state.width });
+    ensureSpace(labelHeight + 4);
+    doc.text(label, state.startX, state.y, { width: state.width });
+    state.y += labelHeight + 2;
+
+    doc.font(opts.italic ? 'Helvetica-Oblique' : 'Helvetica').fontSize(9).fillColor(opts.color || '#1a1a1a');
+    const bodyText = text || '';
+    const bodyHeight = doc.heightOfString(bodyText, { width: state.width });
+    ensureSpace(bodyHeight + 10);
+    doc.text(bodyText, state.startX, state.y, { width: state.width });
+    state.y += bodyHeight + 12;
+    doc.fillColor('#000000');
+  }
+
+  ensureSpace(20);
+  doc.font('Helvetica-Bold').fontSize(13).fillColor('#0b4a5c');
+  doc.text(row.id + '  —  ' + (row.equipment || 'Unknown equipment'), state.startX, state.y, { width: state.width });
+  state.y += 18;
+  doc.fillColor('#000000');
+
+  const reportedByText = 'Reported by ' + (row.technician || 'Unknown') + (row.reporterEmail ? ' (' + row.reporterEmail + ')' : '');
+  const metaLine = [
+    reportedByText,
+    row.location,
+    row.requestTypeLabel,
+    row.typeLabel,
+    row.severityLabel,
+    row.date,
+    'Status: ' + row.status
+  ].filter(Boolean).join('   ·   ');
+
+  doc.font('Helvetica').fontSize(8.5).fillColor('#555555');
+  const metaHeight = doc.heightOfString(metaLine, { width: state.width });
+  ensureSpace(metaHeight + 10);
+  doc.text(metaLine, state.startX, state.y, { width: state.width });
+  state.y += metaHeight + 14;
+  doc.fillColor('#000000');
+
+  drawField('Description', row.description || 'No description recorded.');
+  drawField('AI diagnosis', row.diagnosis || 'No diagnosis recorded.');
+
+  if (row.status === 'Resolved' && row.resolutionNotes) {
+    const resolutionLabel = 'Resolution   ·   Root cause: ' + (row.rootCauseLabel || 'Not recorded') +
+      '   ·   Resolved ' + (row.resolvedDate || 'date not recorded');
+    drawField(resolutionLabel, row.resolutionNotes);
+  } else {
+    drawField('Resolution', 'Not yet resolved.', { italic: true, color: '#888888' });
+  }
+
+  ensureSpace(14);
+  doc.moveTo(state.startX, state.y).lineTo(state.startX + state.width, state.y).strokeColor('#dddddd').stroke();
+  state.y += 18;
+  doc.fillColor('#000000');
+}
+
+app.get('/api/reports/export', requireAuth, requireRole(exportReportsRoles), function (req, res) {
+  const format = req.query.format;
+
+  if (!['csv', 'xlsx', 'pdf'].includes(format)) {
+    return res.status(400).json({ error: 'Unsupported export format. Use csv, xlsx, or pdf.' });
+  }
+
+  // A single-report download (from the fault detail panel) is scoped by
+  // id and ignores the status/requestType filters — those only apply to
+  // the bulk "everything currently in the log view" export.
+  const singleId = req.query.id ? String(req.query.id) : null;
+  let rows;
+
+  try {
+    if (singleId) {
+      const singleRecord = db.prepare(REPORTS_WITH_REPORTER_SELECT + ' WHERE reports.id = ? AND reports.companyId = ?').get(singleId, req.session.companyId);
+      if (!singleRecord) {
+        return res.status(404).json({ error: 'Report not found.' });
+      }
+      rows = [mapReportForExport(singleRecord)];
+    } else {
+      rows = reportsForExport(req);
+    }
+  } catch (err) {
+    console.error('Export query failed:', err.message);
+    return res.status(500).json({ error: 'Could not load reports for export.' });
+  }
+
+  // When the bulk export was scoped to one reporter (the admin panel's
+  // "export by employee" picker), fold their name into the filename too —
+  // otherwise a download named just "tervexa-fault-log-2026-09-01.xlsx"
+  // gives no hint it's actually just one person's reports once it's sitting
+  // in a Downloads folder next to the unfiltered one.
+  let reporterSuffix = '';
+  if (!singleId && req.query.reporterId) {
+    const reporterRow = db.prepare('SELECT fullName, email FROM users WHERE id = ? AND companyId = ?').get(Number(req.query.reporterId), req.session.companyId);
+    if (reporterRow) {
+      const slug = (reporterRow.fullName || reporterRow.email || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      if (slug) {
+        reporterSuffix = '-' + slug;
+      }
+    }
+  }
+
+  const stamp = new Date().toISOString().slice(0, 10);
+  const filenameBase = singleId
+    ? 'tervexa-report-' + rows[0].id.replace(/[^a-zA-Z0-9_-]/g, '') + '-' + stamp
+    : 'tervexa-fault-log' + reporterSuffix + '-' + stamp;
+
+  if (format === 'csv') {
+    let lines;
+
+    if (singleId) {
+      // One report read top to bottom, field by field, rather than a
+      // one-row table nobody can read without scrolling sideways.
+      lines = EXPORT_COLUMNS.map(function (c) { return csvCell(c.header) + ',' + csvCell(rows[0][c.key]); });
+      lines.unshift(csvCell('Field') + ',' + csvCell('Value'));
+    } else {
+      const headerLine = EXPORT_COLUMNS.map(function (c) { return csvCell(c.header); }).join(',');
+      lines = rows.map(function (row) {
+        return EXPORT_COLUMNS.map(function (c) { return csvCell(row[c.key]); }).join(',');
+      });
+      lines.unshift(headerLine);
+    }
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="' + filenameBase + '.csv"');
+    // A UTF-8 BOM so this opens with correct characters in Excel on
+    // Windows, which otherwise guesses the file's encoding wrong.
+    res.send('﻿' + lines.join('\r\n'));
+    return;
+  }
+
+  if (format === 'xlsx') {
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Tervexa';
+    workbook.created = new Date();
+
+    if (singleId) {
+      const sheet = workbook.addWorksheet('Fault report');
+      sheet.columns = [
+        { header: 'Field', key: 'field', width: 20 },
+        { header: 'Value', key: 'value', width: 80 }
+      ];
+      sheet.getRow(1).font = { bold: true };
+      sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6F4F9' } };
+
+      EXPORT_COLUMNS.forEach(function (c) {
+        const addedRow = sheet.addRow({ field: c.header, value: rows[0][c.key] });
+        addedRow.getCell('value').alignment = { wrapText: true, vertical: 'top' };
+      });
+    } else {
+      const sheet = workbook.addWorksheet('Fault log');
+      sheet.columns = EXPORT_COLUMNS.map(function (c) { return { header: c.header, key: c.key, width: c.width }; });
+      sheet.getRow(1).font = { bold: true };
+      sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6F4F9' } };
+      rows.forEach(function (row) { sheet.addRow(row); });
+      sheet.views = [{ state: 'frozen', ySplit: 1 }];
+    }
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="' + filenameBase + '.xlsx"');
+
+    workbook.xlsx.write(res).then(function () {
+      res.end();
+    }).catch(function (err) {
+      console.error('XLSX export failed:', err.message);
+      // Headers are likely already sent by the time xlsx.write() can fail
+      // partway through, so just end the response rather than trying to
+      // send a JSON error on top of a partial file.
+      res.end();
+    });
+    return;
+  }
+
+  // format === 'pdf' — a readable report per block (header, description,
+  // AI diagnosis, and the full resolution when there is one), not a dense
+  // table, so a single download is complete on its own rather than a
+  // summary that sends you back to the app for the detail.
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'attachment; filename="' + filenameBase + '.pdf"');
+
+  const doc = new PDFDocument({ margin: 40, size: 'A4', layout: singleId ? 'portrait' : 'landscape' });
+  doc.pipe(res);
+
+  const startX = doc.page.margins.left;
+  const contentWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+  const pageBottom = doc.page.height - doc.page.margins.bottom;
+  const state = { startX: startX, width: contentWidth, pageBottom: pageBottom, y: doc.page.margins.top };
+
+  const title = singleId ? 'Tervexa — Fault report ' + rows[0].id : 'Tervexa — Fault log export';
+  doc.font('Helvetica-Bold').fontSize(16).fillColor('#000000').text(title, startX, state.y, { width: contentWidth });
+  state.y += 22;
+
+  const subtitle = 'Generated ' + new Date().toLocaleString() + (singleId ? '' : '  ·  ' + rows.length + ' report(s)');
+  doc.font('Helvetica').fontSize(9).fillColor('#666666').text(subtitle, startX, state.y, { width: contentWidth });
+  state.y += 22;
+  doc.fillColor('#000000');
+
+  rows.forEach(function (row) { drawPdfReportBlock(doc, state, row); });
+
+  doc.end();
 });
 
 // Lets a page load pull in the account's conversation history so far,
@@ -458,14 +1461,32 @@ function nextReportId() {
   return 'F-' + String(nextNumber).padStart(3, '0');
 }
 
+// reporterEmail is pulled from the account behind userId, not the free-typed
+// "technician" name field on the report — two people can type the same
+// name, but they can't share an account, so this is what actually tells
+// them apart (the fault log and detail view surface it whenever a name
+// collides; see renderFaultLog/showFaultDetail in main.js).
+const REPORTS_WITH_REPORTER_SELECT = 'SELECT reports.*, users.email AS reporterEmail FROM reports LEFT JOIN users ON users.id = reports.userId';
+
 app.get('/api/reports', requireAuth, function (req, res) {
   try {
     let rows;
 
-    if (ownReportsOnlyRoles.includes(req.session.role)) {
-      rows = db.prepare('SELECT * FROM reports WHERE userId = ? ORDER BY rowid').all(req.session.userId);
+    if (viewOwnReportsOnlyRoles.includes(req.session.role)) {
+      rows = db.prepare(REPORTS_WITH_REPORTER_SELECT + ' WHERE reports.userId = ? AND reports.companyId = ? ORDER BY reports.rowid').all(req.session.userId, req.session.companyId);
     } else {
-      rows = db.prepare('SELECT * FROM reports ORDER BY rowid').all();
+      rows = db.prepare(REPORTS_WITH_REPORTER_SELECT + ' WHERE reports.companyId = ? ORDER BY reports.rowid').all(req.session.companyId);
+    }
+
+    // Layered on top of the ownership filtering above, not instead of it —
+    // a technician already sees only their own reports; this additionally
+    // keeps their log to their field's request types (see
+    // ROLE_REQUEST_TYPES), unless hybrid mode is on. Supervisor, manager,
+    // and admin have no entry here and keep seeing every request type, by
+    // design — their job is oversight/administration across every field.
+    const scopedTypes = ROLE_REQUEST_TYPES[req.session.role];
+    if (scopedTypes && !req.session.hybridMode) {
+      rows = rows.filter(function (row) { return scopedTypes.includes(row.requestType || 'fault'); });
     }
 
     res.json(rows);
@@ -480,7 +1501,7 @@ app.get('/api/reports', requireAuth, function (req, res) {
 // plus whichever request-type-specific fields apply); anything not
 // supplied is stored as an empty string, matching how the web form's own
 // fields behave when a section doesn't apply to the chosen request type.
-function insertReport(r, userId, channel) {
+function insertReport(r, userId, companyId, channel) {
   const newId = nextReportId();
 
   const stmt = db.prepare(`
@@ -488,12 +1509,12 @@ function insertReport(r, userId, channel) {
       id, technician, equipment, location, requestType, type, severity, onset,
       installStage, equipmentModel, timeSinceInstall, warrantyStatus,
       applicationImpact, recurring, date, status, description, diagnosis,
-      rootCause, resolutionNotes, resolvedDate, userId, channel
+      rootCause, resolutionNotes, resolvedDate, userId, companyId, channel
     ) VALUES (
       @id, @technician, @equipment, @location, @requestType, @type, @severity, @onset,
       @installStage, @equipmentModel, @timeSinceInstall, @warrantyStatus,
       @applicationImpact, @recurring, @date, @status, @description, @diagnosis,
-      @rootCause, @resolutionNotes, @resolvedDate, @userId, @channel
+      @rootCause, @resolutionNotes, @resolvedDate, @userId, @companyId, @channel
     )
   `);
 
@@ -520,13 +1541,14 @@ function insertReport(r, userId, channel) {
     resolutionNotes: r.resolutionNotes || '',
     resolvedDate: r.resolvedDate || '',
     userId: userId,
+    companyId: companyId,
     channel: channel
   });
 
   return newId;
 }
 
-app.post('/api/reports', requireAuth, function (req, res) {
+app.post('/api/reports', requireAuth, requireRole(submitReportRoles), function (req, res) {
   const r = req.body;
 
   if (!r) {
@@ -537,6 +1559,19 @@ app.post('/api/reports', requireAuth, function (req, res) {
     return res.status(400).json({ error: 'Invalid request type.' });
   }
 
+  // Role-scoped request types (see ROLE_REQUEST_TYPES above) — a role with
+  // no entry there (only admin reaches this route unscoped; supervisor/
+  // manager can't submit at all, per submitReportRoles) is never blocked
+  // here. hybridMode is the account's own opt-in escape hatch for work
+  // that genuinely spans more than one field.
+  const scopedTypes = ROLE_REQUEST_TYPES[req.session.role];
+  if (scopedTypes && !req.session.hybridMode && !scopedTypes.includes(r.requestType || 'fault')) {
+    return res.status(403).json({
+      error: 'That request type is outside your role\'s usual scope. Turn on hybrid mode if this job genuinely crosses into another field.',
+      outsideScope: true
+    });
+  }
+
   if (!r.technician || !r.equipment || !r.location) {
     return res.status(400).json({ error: 'Technician name, equipment ID, and location are required.' });
   }
@@ -545,11 +1580,17 @@ app.post('/api/reports', requireAuth, function (req, res) {
     return res.status(400).json({ error: 'Description must be at least 20 characters.' });
   }
 
+  const limitCheck = checkReportLimit(req.session.companyId);
+  if (!limitCheck.allowed) {
+    return res.status(403).json({ error: limitCheck.message, upgradeRequired: true });
+  }
+
   try {
-    // userId is taken from the session, not the request body — the client
-    // can't claim to be someone else's report.
-    const newId = insertReport(r, req.session.userId, 'web');
-    res.json({ ok: true, id: newId });
+    // userId and companyId are taken from the session, not the request
+    // body — the client can't claim to be someone else's report, or file
+    // it under a different company.
+    const newId = insertReport(r, req.session.userId, req.session.companyId, 'web');
+    res.json({ ok: true, id: newId, overLimit: limitCheck.overLimit });
   } catch (err) {
     console.error('Database write error:', err.message);
     res.status(500).json({ error: 'Could not save report.' });
@@ -569,13 +1610,23 @@ app.patch('/api/reports/:id', requireAuth, function (req, res) {
   }
 
   try {
-    if (ownReportsOnlyRoles.includes(req.session.role)) {
+    // Company boundary first — a report belonging to a different company
+    // is treated exactly like a report that doesn't exist, whatever role
+    // the requester holds.
+    const inCompany = db.prepare('SELECT id FROM reports WHERE id = ? AND companyId = ?').get(id, req.session.companyId);
+
+    if (!inCompany) {
+      return res.status(404).json({ error: 'Report not found.' });
+    }
+
+    if (!editAnyReportRoles.includes(req.session.role)) {
       const owned = db.prepare('SELECT id FROM reports WHERE id = ? AND userId = ?').get(id, req.session.userId);
 
       if (!owned) {
         // Same 404 whether the report doesn't exist or just isn't theirs —
-        // no need to confirm to a technician that someone else's report ID
-        // is valid.
+        // no need to confirm to a technician (or engineer, who can see
+        // this report exists but not edit it) that someone else's report
+        // ID is valid.
         return res.status(404).json({ error: 'Report not found.' });
       }
     }
@@ -608,13 +1659,721 @@ app.patch('/api/reports/:id', requireAuth, function (req, res) {
   }
 });
 
+app.delete('/api/reports/:id', requireAuth, requireRole(deleteReportRoles), function (req, res) {
+  const id = req.params.id;
+
+  try {
+    const result = db.prepare('DELETE FROM reports WHERE id = ? AND companyId = ?').run(id, req.session.companyId);
+
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Report not found.' });
+    }
+
+    res.json({ ok: true, id: id });
+  } catch (err) {
+    console.error('Database delete error:', err.message);
+    res.status(500).json({ error: 'Could not delete report.' });
+  }
+});
+
+// --- Admin: account and company management -----------------------------
+// Every route here is admin-only (see adminRoles / requireRole above) AND
+// scoped to the admin's own companyId — an admin manages their company,
+// never any other. passwordHash is never selected — the admin panel has no
+// reason to touch it, and there's no reason to pull a hash into a response
+// body at all.
+app.get('/api/admin/users', requireAuth, requireRole(adminRoles), function (req, res) {
+  try {
+    const rows = db.prepare(
+      'SELECT id, email, fullName, phone, company, role, active, mustChangePassword, createdAt FROM users WHERE companyId = ? ORDER BY id'
+    ).all(req.session.companyId);
+
+    res.json(rows);
+  } catch (err) {
+    console.error('Database read error:', err.message);
+    res.status(500).json({ error: 'Could not load accounts.' });
+  }
+});
+
+app.patch('/api/admin/users/:id', requireAuth, requireRole(adminRoles), function (req, res) {
+  const id = Number(req.params.id);
+  const body = req.body || {};
+
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({ error: 'Invalid account id.' });
+  }
+
+  if (body.role !== undefined && !VALID_ROLES.includes(body.role)) {
+    return res.status(400).json({ error: 'Invalid role.' });
+  }
+
+  if (body.active !== undefined && typeof body.active !== 'boolean') {
+    return res.status(400).json({ error: 'Invalid active value.' });
+  }
+
+  try {
+    const target = db.prepare('SELECT id, email, role, active, companyId FROM users WHERE id = ?').get(id);
+
+    // Same 404 whether the account doesn't exist or belongs to a different
+    // company — an admin has no way to even confirm another company's
+    // account ID is real.
+    if (!target || target.companyId !== req.session.companyId) {
+      return res.status(404).json({ error: 'Account not found.' });
+    }
+
+    const nextRole = body.role !== undefined ? body.role : target.role;
+    const nextActive = body.active !== undefined ? (body.active ? 1 : 0) : target.active;
+
+    // Refuse a change that would leave zero active administrators IN THIS
+    // COMPANY — that's an unrecoverable lockout (nobody left who can open
+    // this company's admin panel to undo it). An admin can still demote or
+    // deactivate themself as long as at least one other active admin at
+    // the same company remains; other companies' admin counts are
+    // irrelevant here.
+    const wasActiveAdmin = target.role === 'admin' && target.active !== 0;
+    const staysActiveAdmin = nextRole === 'admin' && nextActive !== 0;
+
+    if (wasActiveAdmin && !staysActiveAdmin) {
+      const otherActiveAdmins = db.prepare(
+        "SELECT COUNT(*) AS count FROM users WHERE role = 'admin' AND active = 1 AND companyId = ? AND id != ?"
+      ).get(req.session.companyId, id).count;
+
+      if (otherActiveAdmins === 0) {
+        return res.status(400).json({ error: 'This is the only active administrator account. Promote or reactivate another admin first.' });
+      }
+    }
+
+    // Reactivating a deactivated account grows the active-seat count just
+    // like adding a new one does, so it's subject to the same seat limit.
+    if (nextActive === 1 && target.active === 0) {
+      const seatCheck = checkSeatLimit(req.session.companyId);
+      if (!seatCheck.allowed) {
+        return res.status(403).json({ error: seatCheck.message, upgradeRequired: true });
+      }
+    }
+
+    db.prepare('UPDATE users SET role = ?, active = ? WHERE id = ?').run(nextRole, nextActive, id);
+
+    const actor = { id: req.session.userId, email: req.session.email };
+
+    if (nextRole !== target.role) {
+      logAudit(req.session.companyId, actor, 'role_changed', target, target.role + ' → ' + nextRole);
+    }
+    if (Boolean(nextActive) !== Boolean(target.active)) {
+      logAudit(req.session.companyId, actor, nextActive ? 'account_activated' : 'account_deactivated', target, '');
+    }
+
+    res.json({ ok: true, id: id, role: nextRole, active: Boolean(nextActive) });
+  } catch (err) {
+    console.error('Database update error:', err.message);
+    res.status(500).json({ error: 'Could not update account.' });
+  }
+});
+
+// Lets an admin add an employee directly rather than sharing the invite
+// code — the admin picks name/email/role, the server picks a temporary
+// password and hands it back once (mustChangePassword forces the employee
+// to replace it with one of their own on first login).
+app.post('/api/admin/users', requireAuth, requireRole(adminRoles), async function (req, res) {
+  const { fullName, phone, email, role } = req.body || {};
+
+  if (!fullName || !fullName.trim()) {
+    return res.status(400).json({ error: 'Full name is required.' });
+  }
+
+  if (!email || !EMAIL_PATTERN.test(email)) {
+    return res.status(400).json({ error: 'Please enter a valid email address.' });
+  }
+
+  if (!role || !VALID_ROLES.includes(role)) {
+    return res.status(400).json({ error: 'Select a role.' });
+  }
+
+  const seatCheck = checkSeatLimit(req.session.companyId);
+  if (!seatCheck.allowed) {
+    return res.status(403).json({ error: seatCheck.message, upgradeRequired: true });
+  }
+
+  try {
+    const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email.toLowerCase());
+
+    if (existing) {
+      return res.status(409).json({ error: 'An account with that email already exists.' });
+    }
+
+    const phoneNormalized = phone ? normalizePhone(phone) : '';
+
+    if (phoneNormalized) {
+      const existingPhone = db.prepare('SELECT id FROM users WHERE phoneNormalized = ?').get(phoneNormalized);
+      if (existingPhone) {
+        return res.status(409).json({ error: 'An account with that phone number already exists.' });
+      }
+    }
+
+    const companyRow = db.prepare('SELECT name FROM companies WHERE id = ?').get(req.session.companyId);
+    const tempPassword = generateTempPassword();
+    const passwordHash = await bcrypt.hash(tempPassword, 12);
+    const now = new Date().toISOString();
+
+    const result = db.prepare(`
+      INSERT INTO users (
+        email, passwordHash, fullName, phone, phoneNormalized, company, role, companyId,
+        mustChangePassword, createdAt, termsAcceptedAt, disclaimerAcceptedAt, preferredLanguage
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
+    `).run(
+      email.toLowerCase(),
+      passwordHash,
+      fullName.trim(),
+      phone || '',
+      phoneNormalized,
+      companyRow ? companyRow.name : '',
+      role,
+      req.session.companyId,
+      now,
+      // An admin added this account on the employee's behalf — there's no
+      // separate consent step for them to click through, so this records
+      // when the account was created rather than a real acceptance
+      // timestamp from the employee themselves.
+      now,
+      now,
+      req.session.preferredLanguage || 'en'
+    );
+
+    logAudit(
+      req.session.companyId,
+      { id: req.session.userId, email: req.session.email },
+      'employee_added',
+      { id: result.lastInsertRowid, email: email.toLowerCase() },
+      'role: ' + role
+    );
+
+    res.json({
+      ok: true,
+      id: result.lastInsertRowid,
+      email: email.toLowerCase(),
+      fullName: fullName.trim(),
+      role: role,
+      tempPassword: tempPassword,
+      overLimit: seatCheck.overLimit
+    });
+  } catch (err) {
+    console.error('Add employee error:', err.message);
+    res.status(500).json({ error: 'Could not create account.' });
+  }
+});
+
+// The admin panel's "your company" section — name, invite code, plan tier,
+// and current usage against that tier's limits (seats, reports this
+// month). Usage is informational only right now — see PLAN_TIERS above —
+// nothing here blocks anyone, it just gives the admin (and, later, the
+// billing flow) real numbers to work from.
+app.get('/api/admin/company', requireAuth, requireRole(adminRoles), function (req, res) {
+  try {
+    const companyRow = db.prepare('SELECT id, name, inviteCode, planTier, isIndividual, trialEndsAt FROM companies WHERE id = ?').get(req.session.companyId);
+
+    if (!companyRow) {
+      return res.status(404).json({ error: 'Company not found.' });
+    }
+
+    const planTier = companyRow.planTier || 'free';
+    const limits = effectiveLimitsFor(companyRow);
+    const trial = trialStatusFor(companyRow);
+
+    const seatCount = db.prepare('SELECT COUNT(*) AS count FROM users WHERE companyId = ? AND active = 1').get(req.session.companyId).count;
+
+    // "This month" by calendar month in the report's own `date` field
+    // (YYYY-MM-DD, same as everywhere else reports are filtered), not a
+    // rolling 30 days — matches how a billing cycle would normally reset.
+    const monthPrefix = new Date().toISOString().slice(0, 7);
+    const reportsThisMonth = db.prepare(
+      "SELECT COUNT(*) AS count FROM reports WHERE companyId = ? AND date LIKE ?"
+    ).get(req.session.companyId, monthPrefix + '%').count;
+
+    res.json({
+      name: companyRow.name,
+      inviteCode: companyRow.inviteCode,
+      planTier: planTier,
+      planLabel: limits.label,
+      seatLimit: limits.seatLimit,
+      monthlyReportLimit: limits.monthlyReportLimit,
+      exportFormats: limits.exportFormats,
+      adminAddedEmployees: limits.adminAddedEmployees,
+      auditLogIncluded: limits.auditLog,
+      isIndividual: Boolean(companyRow.isIndividual),
+      onTrial: trial.onTrial,
+      trialExpired: trial.expired,
+      trialEndsAt: trial.trialEndsAt,
+      usage: {
+        seatCount: seatCount,
+        reportsThisMonth: reportsThisMonth
+      }
+    });
+  } catch (err) {
+    console.error('Database read error:', err.message);
+    res.status(500).json({ error: 'Could not load company details.' });
+  }
+});
+
+// Last 50 sensitive account-management actions for this admin's company
+// (see logAudit / auditLog table) — role changes, activate/deactivate, an
+// employee added directly, invite code regeneration. Newest first.
+app.get('/api/admin/audit-log', requireAuth, requireRole(adminRoles), function (req, res) {
+  try {
+    const rows = db.prepare(
+      'SELECT id, actorEmail, action, targetEmail, details, createdAt FROM auditLog WHERE companyId = ? ORDER BY id DESC LIMIT 50'
+    ).all(req.session.companyId);
+
+    res.json(rows);
+  } catch (err) {
+    console.error('Database read error:', err.message);
+    res.status(500).json({ error: 'Could not load activity log.' });
+  }
+});
+
+// Invalidates the old invite code and issues a new one — for when a code
+// has been shared more widely than intended.
+app.post('/api/admin/company/invite-code', requireAuth, requireRole(adminRoles), function (req, res) {
+  try {
+    const newCode = generateUniqueInviteCode();
+    db.prepare('UPDATE companies SET inviteCode = ? WHERE id = ?').run(newCode, req.session.companyId);
+    logAudit(
+      req.session.companyId,
+      { id: req.session.userId, email: req.session.email },
+      'invite_code_regenerated',
+      null,
+      ''
+    );
+    res.json({ ok: true, inviteCode: newCode });
+  } catch (err) {
+    console.error('Invite code regeneration error:', err.message);
+    res.status(500).json({ error: 'Could not generate a new invite code.' });
+  }
+});
+
+// --- Billing / subscriptions -----------------------------------------
+// Three providers (Paystack, Flutterwave, Stripe — see payments/), one
+// hosted-checkout-redirect flow for all of them: the admin picks a plan
+// and a provider, we create/reuse that provider's Plan or Price object,
+// start a checkout session, and hand back a URL to redirect the browser
+// to. No card details ever pass through this server. The actual upgrade
+// happens when the provider calls one of the /api/webhooks/* routes
+// below — the checkout redirect back to billing.html is just a "nice,
+// you're on your way" landing, not what confirms payment.
+
+// Which plans exist to buy, with pricing in every currency a configured
+// provider might charge in, plus which providers are actually usable
+// right now (a provider with no secret key set just doesn't appear —
+// same "left unset, still runs" pattern as the WhatsApp integration).
+app.get('/api/billing/plans', requireAuth, requireRole(adminRoles), function (req, res) {
+  const companyRow = db.prepare('SELECT isIndividual FROM companies WHERE id = ?').get(req.session.companyId);
+  const accountType = accountTypeFor(companyRow);
+
+  // An individual account never sees an Enterprise card at all — Pro
+  // already gives it every feature Enterprise would (see the comment on
+  // PLAN_PRICING in payments/config.js), so there's nothing to sell it
+  // that isn't just Pro under a pricier name.
+  const availableTiers = accountType === 'individual' ? ['pro'] : ['pro', 'enterprise'];
+
+  const tiers = availableTiers.map(function (planTier) {
+    const limits = planLimitsFor(planTier);
+    // The raw tier definition's seatLimit (Pro's 20) is a company number —
+    // an individual account is always 1 seat, on any tier it can actually
+    // buy, so the plan card has to show that instead of the tier's normal
+    // number (see effectiveLimitsFor()).
+    const seatLimit = accountType === 'individual' ? 1 : limits.seatLimit;
+    return {
+      planTier: planTier,
+      label: limits.label,
+      seatLimit: seatLimit,
+      monthlyReportLimit: limits.monthlyReportLimit,
+      exportFormats: limits.exportFormats,
+      pricing: {
+        ngn: { monthly: payments.priceFor(accountType, planTier, 'monthly', 'ngn'), annual: payments.priceFor(accountType, planTier, 'annual', 'ngn') },
+        usd: { monthly: payments.priceFor(accountType, planTier, 'monthly', 'usd'), annual: payments.priceFor(accountType, planTier, 'annual', 'usd') }
+      }
+    };
+  });
+
+  res.json({
+    tiers: tiers,
+    availableProviders: payments.availableProviders()
+  });
+});
+
+// The admin panel's billing status — current plan, cycle, renewal date,
+// and whether a cancellation is already pending.
+app.get('/api/billing/status', requireAuth, requireRole(adminRoles), function (req, res) {
+  try {
+    const companyRow = db.prepare(
+      'SELECT planTier, billingCycle, subscriptionStatus, subscriptionProvider, currentPeriodEnd, pendingCancellation, isIndividual, trialEndsAt FROM companies WHERE id = ?'
+    ).get(req.session.companyId);
+
+    if (!companyRow) {
+      return res.status(404).json({ error: 'Company not found.' });
+    }
+
+    const limits = effectiveLimitsFor(companyRow);
+    const trial = trialStatusFor(companyRow);
+
+    res.json({
+      planTier: companyRow.planTier || 'free',
+      planLabel: limits.label,
+      billingCycle: companyRow.billingCycle,
+      subscriptionStatus: companyRow.subscriptionStatus,
+      subscriptionProvider: companyRow.subscriptionProvider,
+      currentPeriodEnd: companyRow.currentPeriodEnd,
+      pendingCancellation: Boolean(companyRow.pendingCancellation),
+      isIndividual: Boolean(companyRow.isIndividual),
+      seatLimit: limits.seatLimit,
+      monthlyReportLimit: limits.monthlyReportLimit,
+      onTrial: trial.onTrial,
+      trialExpired: trial.expired,
+      trialEndsAt: trial.trialEndsAt
+    });
+  } catch (err) {
+    console.error('Database read error:', err.message);
+    res.status(500).json({ error: 'Could not load billing status.' });
+  }
+});
+
+// Starts a checkout: creates (or reuses) the provider-side Plan/Price,
+// opens a checkout session against it, and hands back the URL to
+// redirect the browser to. Nothing in our own database changes yet — a
+// pending transaction row is written so the eventual webhook has
+// something to match against, but the company's planTier only moves once
+// the webhook confirms the payment actually went through.
+app.post('/api/billing/checkout', requireAuth, requireRole(adminRoles), async function (req, res) {
+  const { planTier, billingCycle, provider } = req.body || {};
+
+  if (!['pro', 'enterprise'].includes(planTier)) {
+    return res.status(400).json({ error: 'Choose a plan to upgrade to.' });
+  }
+  if (!['monthly', 'annual'].includes(billingCycle)) {
+    return res.status(400).json({ error: 'Choose monthly or annual billing.' });
+  }
+
+  const providerModule = payments.getProvider(provider);
+  if (!providerModule || !providerModule.configured()) {
+    return res.status(400).json({ error: 'That payment method is not available right now.' });
+  }
+
+  try {
+    const company = db.prepare('SELECT id, name, isIndividual FROM companies WHERE id = ?').get(req.session.companyId);
+    if (!company) {
+      return res.status(404).json({ error: 'Company not found.' });
+    }
+
+    const accountType = accountTypeFor(company);
+
+    // An individual account can't buy Enterprise — there's no such plan
+    // for it (see the PLAN_PRICING comment in payments/config.js). This
+    // mirrors what GET /api/billing/plans already never offers it, but a
+    // direct API call still needs its own server-side check.
+    if (accountType === 'individual' && planTier === 'enterprise') {
+      return res.status(400).json({ error: 'Enterprise is not available on an individual account — Pro already includes every feature.' });
+    }
+
+    const currency = payments.PROVIDER_CURRENCY[provider];
+    const amount = payments.priceFor(accountType, planTier, billingCycle, currency);
+    if (!amount) {
+      return res.status(400).json({ error: 'Could not price that plan.' });
+    }
+
+    const reference = 'txn_' + crypto.randomBytes(12).toString('hex');
+    const now = new Date().toISOString();
+
+    db.prepare(`
+      INSERT INTO transactions (companyId, provider, providerReference, planTier, billingCycle, amount, currency, status, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+    `).run(company.id, provider, reference, planTier, billingCycle, amount, currency, now);
+
+    const origin = req.protocol + '://' + req.get('host');
+    const session = await providerModule.createCheckoutSession({
+      company: company,
+      planTier: planTier,
+      planLabel: planLimitsFor(planTier).label,
+      billingCycle: billingCycle,
+      amount: amount,
+      adminEmail: req.session.email,
+      reference: reference,
+      successUrl: origin + '/billing.html?checkout=success',
+      cancelUrl: origin + '/billing.html?checkout=cancelled'
+    });
+
+    res.json({ checkoutUrl: session.url });
+  } catch (err) {
+    console.error('Checkout creation error:', err.message);
+    res.status(500).json({ error: 'Could not start checkout. Please try again.' });
+  }
+});
+
+// Cancels immediately (not "at period end") — the company drops back to
+// the free tier as soon as the provider confirms the cancellation. This
+// is a deliberate simplification over the more common "keep paid access
+// until the period you already paid for runs out": simpler to reason
+// about and to build without a scheduled-downgrade job, at the cost of
+// not refunding/prorating the unused remainder of the current period.
+app.post('/api/billing/cancel', requireAuth, requireRole(adminRoles), async function (req, res) {
+  try {
+    const company = db.prepare(
+      'SELECT id, name, subscriptionProvider, subscriptionRef, subscriptionMeta FROM companies WHERE id = ?'
+    ).get(req.session.companyId);
+
+    if (!company || !company.subscriptionProvider || !company.subscriptionRef) {
+      return res.status(400).json({ error: 'There is no active paid subscription to cancel.' });
+    }
+
+    const providerModule = payments.getProvider(company.subscriptionProvider);
+    if (!providerModule) {
+      return res.status(400).json({ error: 'Unknown payment provider on file for this company.' });
+    }
+
+    await providerModule.cancelSubscription({
+      id: company.id,
+      subscriptionRef: company.subscriptionRef,
+      subscriptionMeta: company.subscriptionMeta,
+      adminEmail: req.session.email
+    });
+
+    db.prepare(
+      "UPDATE companies SET planTier = 'free', billingCycle = NULL, subscriptionStatus = 'canceled', pendingCancellation = 0 WHERE id = ?"
+    ).run(company.id);
+
+    logAudit(
+      company.id,
+      { id: req.session.userId, email: req.session.email },
+      'plan_canceled',
+      null,
+      'was ' + company.subscriptionProvider
+    );
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Subscription cancellation error:', err.message);
+    res.status(500).json({ error: 'Could not cancel the subscription. Please try again, or contact support.' });
+  }
+});
+
+// One webhook route per provider — each verifies its own signature
+// scheme against the raw request body (see req.rawBody, captured by the
+// express.json() verify callback above) before trusting anything in the
+// payload. Always responds quickly, per every provider's own advice:
+// an unexpected error in the handling logic still returns 200 rather
+// than making the provider hammer retries for a bug that a retry can't
+// fix — the error is logged server-side for us to catch instead.
+function handleWebhook(providerName) {
+  return async function (req, res) {
+    const providerModule = payments.getProvider(providerName);
+
+    if (!providerModule || !providerModule.configured() || !providerModule.verifySignature(req)) {
+      return res.status(400).json({ error: 'Invalid signature.' });
+    }
+
+    let event;
+    try {
+      event = providerModule.parseWebhookEvent(req.body);
+    } catch (err) {
+      console.error(providerName + ' webhook parse error:', err.message);
+      return res.status(200).json({ received: true });
+    }
+
+    if (!event) {
+      // A real, validly-signed event we simply don't act on (a payout
+      // notification, a refund, etc.) — still a success as far as the
+      // provider is concerned.
+      return res.status(200).json({ received: true });
+    }
+
+    try {
+      const already = db.prepare(
+        'SELECT id FROM processedWebhookEvents WHERE provider = ? AND eventId = ?'
+      ).get(providerName, event.eventId);
+
+      if (already) {
+        return res.status(200).json({ received: true });
+      }
+
+      db.prepare(
+        'INSERT INTO processedWebhookEvents (provider, eventId, processedAt) VALUES (?, ?, ?)'
+      ).run(providerName, event.eventId, new Date().toISOString());
+
+      if (event.kind === 'payment_success') {
+        handlePaymentSuccess(providerName, event);
+      } else if (event.kind === 'subscription_linked') {
+        handleSubscriptionLinked(providerName, event);
+      } else if (event.kind === 'subscription_canceled') {
+        handleSubscriptionCanceled(providerName, event);
+      } else if (event.kind === 'payment_failed') {
+        handlePaymentFailed(providerName, event);
+      }
+    } catch (err) {
+      console.error(providerName + ' webhook handling error:', err.message);
+    }
+
+    res.status(200).json({ received: true });
+  };
+}
+
+function resolveCompanyIdForEvent(event) {
+  if (event.companyId) {
+    const asNumber = Number(event.companyId);
+    if (asNumber) {
+      return asNumber;
+    }
+  }
+
+  if (event.reference) {
+    const txn = db.prepare('SELECT companyId FROM transactions WHERE providerReference = ?').get(event.reference);
+    if (txn) {
+      return txn.companyId;
+    }
+  }
+
+  if (event.customerEmail) {
+    const admin = db.prepare(
+      "SELECT companyId FROM users WHERE email = ? AND role = 'admin'"
+    ).get(event.customerEmail.toLowerCase());
+    if (admin) {
+      return admin.companyId;
+    }
+  }
+
+  return null;
+}
+
+function handlePaymentSuccess(providerName, event) {
+  const companyId = resolveCompanyIdForEvent(event);
+  if (!companyId) {
+    console.error(providerName + ' webhook: could not resolve a company for a successful payment. Reference:', event.reference);
+    return;
+  }
+
+  const company = db.prepare('SELECT planTier, billingCycle FROM companies WHERE id = ?').get(companyId);
+  if (!company) {
+    return;
+  }
+
+  const planTier = event.planTier || company.planTier;
+  const billingCycle = event.billingCycle || company.billingCycle || 'monthly';
+  const now = new Date();
+  const periodEnd = new Date(now);
+  if (billingCycle === 'annual') {
+    periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+  } else {
+    periodEnd.setMonth(periodEnd.getMonth() + 1);
+  }
+
+  const planChanged = company.planTier !== planTier;
+
+  const updateFields = ['planTier = ?', 'billingCycle = ?', "subscriptionStatus = 'active'", 'subscriptionProvider = ?', 'currentPeriodEnd = ?', 'pendingCancellation = 0'];
+  const updateValues = [planTier, billingCycle, providerName, periodEnd.toISOString()];
+
+  if (event.subscriptionRef) {
+    updateFields.push('subscriptionRef = ?');
+    updateValues.push(event.subscriptionRef);
+  }
+
+  updateValues.push(companyId);
+  db.prepare('UPDATE companies SET ' + updateFields.join(', ') + ' WHERE id = ?').run(...updateValues);
+
+  if (event.reference) {
+    const updated = db.prepare(
+      "UPDATE transactions SET status = 'success' WHERE providerReference = ? AND status = 'pending'"
+    ).run(event.reference);
+
+    if (updated.changes === 0) {
+      // A renewal cycle has no matching pending row (it wasn't started
+      // from our checkout flow) — record it as its own transaction.
+      db.prepare(`
+        INSERT INTO transactions (companyId, provider, providerReference, planTier, billingCycle, amount, currency, status, createdAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'success', ?)
+      `).run(companyId, providerName, event.reference, planTier, billingCycle, event.amount || 0, event.currency || 'ngn', now.toISOString());
+    }
+  }
+
+  if (planChanged) {
+    const admin = db.prepare("SELECT id, email FROM users WHERE companyId = ? AND role = 'admin' LIMIT 1").get(companyId);
+    logAudit(companyId, admin || null, 'plan_upgraded', null, planTier + ' (' + billingCycle + ', via ' + providerName + ')');
+  }
+}
+
+// Paystack-only: subscription.create fires as a companion event to
+// charge.success but doesn't carry our metadata, so it's matched to a
+// company by admin email instead — see payments/paystack.js.
+function handleSubscriptionLinked(providerName, event) {
+  if (!event.customerEmail) {
+    return;
+  }
+  const admin = db.prepare("SELECT companyId FROM users WHERE email = ? AND role = 'admin'").get(event.customerEmail.toLowerCase());
+  if (!admin) {
+    return;
+  }
+
+  const meta = event.subscriptionEmailToken ? JSON.stringify({ emailToken: event.subscriptionEmailToken }) : null;
+
+  db.prepare(
+    'UPDATE companies SET subscriptionRef = ?, subscriptionMeta = COALESCE(?, subscriptionMeta) WHERE id = ?'
+  ).run(event.subscriptionRef, meta, admin.companyId);
+}
+
+function handleSubscriptionCanceled(providerName, event) {
+  if (!event.subscriptionRef) {
+    return;
+  }
+  const company = db.prepare(
+    'SELECT id FROM companies WHERE subscriptionRef = ? AND subscriptionProvider = ?'
+  ).get(event.subscriptionRef, providerName);
+  if (!company) {
+    return;
+  }
+
+  db.prepare(
+    "UPDATE companies SET planTier = 'free', billingCycle = NULL, subscriptionStatus = 'canceled', pendingCancellation = 0 WHERE id = ?"
+  ).run(company.id);
+
+  const admin = db.prepare("SELECT id, email FROM users WHERE companyId = ? AND role = 'admin' LIMIT 1").get(company.id);
+  logAudit(company.id, admin || null, 'plan_canceled', null, 'via ' + providerName + ' webhook');
+}
+
+function handlePaymentFailed(providerName, event) {
+  if (!event.subscriptionRef) {
+    return;
+  }
+  db.prepare(
+    "UPDATE companies SET subscriptionStatus = 'past_due' WHERE subscriptionRef = ? AND subscriptionProvider = ?"
+  ).run(event.subscriptionRef, providerName);
+}
+
+app.post('/api/webhooks/paystack', handleWebhook('paystack'));
+app.post('/api/webhooks/flutterwave', handleWebhook('flutterwave'));
+app.post('/api/webhooks/stripe', handleWebhook('stripe'));
+
+// Signup is one of three modes: 'create' (a brand new company, the signer
+// becomes its admin — the only path to the admin role), 'join' (an existing
+// company via invite code, any role except admin), or 'individual' (a
+// company of one, created automatically with no company name or invite code
+// ever shown to the person — they just get an account). Under the hood an
+// individual signup is really the same thing as 'create': it's still a
+// companyId-scoped tenant with its own invite code, so if that person ever
+// wants to bring someone else on, they can invite them from the admin panel
+// without anything having to change.
 app.post('/api/signup', authLimiter, async function (req, res) {
-  const { email, password, fullName, phone, company, role, termsAccepted, disclaimerAccepted, preferredLanguage } = req.body;
+  const {
+    mode, email, password, fullName, phone,
+    companyName, inviteCode, role,
+    termsAccepted, disclaimerAccepted, preferredLanguage
+  } = req.body;
+
   // Carries over whatever language someone already had selected while
   // browsing the public pages before they signed up, so the account
   // doesn't reset to English the moment it's created. Falls back to
   // English for anything unrecognized.
   const initialLanguage = (preferredLanguage && LANGUAGE_NAMES[preferredLanguage]) ? preferredLanguage : 'en';
+
+  if (mode !== 'create' && mode !== 'join' && mode !== 'individual') {
+    return res.status(400).json({ error: 'Choose whether you are creating a new company, joining one with an invite code, or signing up as an individual.' });
+  }
 
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required.' });
@@ -629,8 +2388,31 @@ app.post('/api/signup', authLimiter, async function (req, res) {
     return res.status(400).json({ error: pwError });
   }
 
-  if (role && !VALID_ROLES.includes(role)) {
-    return res.status(400).json({ error: 'Invalid role.' });
+  if (mode === 'create' && (!companyName || !companyName.trim())) {
+    return res.status(400).json({ error: 'Enter a company name.' });
+  }
+
+  let joinCompany = null;
+
+  if (mode === 'join') {
+    if (!inviteCode || !inviteCode.trim()) {
+      return res.status(400).json({ error: 'Enter your company invite code.' });
+    }
+
+    if (!role || !JOIN_SIGNUP_ROLES.includes(role)) {
+      return res.status(400).json({ error: 'Select your role.' });
+    }
+
+    joinCompany = db.prepare('SELECT id, name FROM companies WHERE inviteCode = ?').get(inviteCode.trim().toUpperCase());
+
+    if (!joinCompany) {
+      return res.status(400).json({ error: "That invite code isn't valid. Check it with your company administrator." });
+    }
+
+    const seatCheck = checkSeatLimit(joinCompany.id);
+    if (!seatCheck.allowed) {
+      return res.status(403).json({ error: "This company's plan is full and can't add another teammate right now. Ask your company admin to upgrade the plan." });
+    }
   }
 
   // The checkboxes are already required in the HTML, so this only ever
@@ -662,34 +2444,86 @@ app.post('/api/signup', authLimiter, async function (req, res) {
 
     const passwordHash = await bcrypt.hash(password, 12);
     const now = new Date().toISOString();
+    const finalRole = mode === 'join' ? role : 'admin';
 
-    const result = db.prepare(`
-      INSERT INTO users (
-        email, passwordHash, fullName, phone, phoneNormalized, company, role,
-        createdAt, termsAcceptedAt, disclaimerAcceptedAt, preferredLanguage
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      email.toLowerCase(),
-      passwordHash,
-      fullName || '',
-      phone || '',
-      phoneNormalized,
-      company || '',
-      role || 'technician',
-      now,
-      now,
-      now,
-      initialLanguage
-    );
+    // Creating the company and the account that owns it happens in one
+    // transaction — never left with a company row and no admin, or an admin
+    // account pointing at a company that doesn't exist.
+    const createUser = db.transaction(function () {
+      let companyId;
+      let companyDisplayName;
 
-    req.session.userId = result.lastInsertRowid;
+      if (mode === 'create') {
+        const newInviteCode = generateUniqueInviteCode();
+        const trialEndsAt = trialEndsAtFor(COMPANY_TRIAL_DAYS, now);
+        const companyResult = db.prepare(
+          "INSERT INTO companies (name, inviteCode, planTier, createdAt, isIndividual, trialEndsAt) VALUES (?, ?, 'free', ?, 0, ?)"
+        ).run(companyName.trim(), newInviteCode, now, trialEndsAt);
+        companyId = companyResult.lastInsertRowid;
+        companyDisplayName = companyName.trim();
+      } else if (mode === 'individual') {
+        // A real company row all the same — just named after the person
+        // and never surfaced as a "company name" field on the form. Gets
+        // its own invite code too, so nothing special has to happen later
+        // if this person ever wants to add a teammate. isIndividual is what
+        // gives it the tighter 1-seat free cap and the shorter 14-day
+        // trial instead of a team's 30 days (see effectiveLimitsFor /
+        // trialEndsAtFor in the PLAN_TIERS section above).
+        const newInviteCode = generateUniqueInviteCode();
+        const soloName = (fullName && fullName.trim()) ? fullName.trim() : 'Individual account';
+        const trialEndsAt = trialEndsAtFor(INDIVIDUAL_TRIAL_DAYS, now);
+        const companyResult = db.prepare(
+          "INSERT INTO companies (name, inviteCode, planTier, createdAt, isIndividual, trialEndsAt) VALUES (?, ?, 'free', ?, 1, ?)"
+        ).run(soloName, newInviteCode, now, trialEndsAt);
+        companyId = companyResult.lastInsertRowid;
+        companyDisplayName = soloName;
+      } else {
+        companyId = joinCompany.id;
+        companyDisplayName = joinCompany.name;
+      }
+
+      const userResult = db.prepare(`
+        INSERT INTO users (
+          email, passwordHash, fullName, phone, phoneNormalized, company, role, companyId,
+          createdAt, termsAcceptedAt, disclaimerAcceptedAt, preferredLanguage
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        email.toLowerCase(),
+        passwordHash,
+        fullName || '',
+        phone || '',
+        phoneNormalized,
+        companyDisplayName,
+        finalRole,
+        companyId,
+        now,
+        now,
+        now,
+        initialLanguage
+      );
+
+      return { userId: userResult.lastInsertRowid, companyId: companyId, companyName: companyDisplayName };
+    });
+
+    const created = createUser();
+
+    req.session.userId = created.userId;
     req.session.email = email.toLowerCase();
     req.session.fullName = fullName || '';
-    req.session.role = role || 'technician';
+    req.session.role = finalRole;
+    req.session.companyId = created.companyId;
     req.session.preferredLanguage = initialLanguage;
+    req.session.hybridMode = false;
 
-    res.json({ ok: true, email: email.toLowerCase(), fullName: fullName || '', preferredLanguage: initialLanguage });
+    res.json({
+      ok: true,
+      email: email.toLowerCase(),
+      fullName: fullName || '',
+      role: finalRole,
+      companyName: created.companyName,
+      preferredLanguage: initialLanguage
+    });
   } catch (err) {
     console.error('Signup error:', err.message);
     res.status(500).json({ error: 'Could not create account.' });
@@ -716,6 +2550,26 @@ app.post('/api/login', authLimiter, async function (req, res) {
       return res.status(401).json({ error: 'Incorrect email or password.' });
     }
 
+    if (user.active === 0) {
+      return res.status(403).json({ error: 'This account has been deactivated. Contact an administrator.' });
+    }
+
+    // An account the admin panel created directly comes with a temporary
+    // password the admin picked — this is proof the person actually knows
+    // that temporary password, but not a real login yet. Send them straight
+    // to the same "set a new password" flow a forgotten-password reset
+    // uses, instead of establishing a normal session, so nobody ends up
+    // using an admin-assigned password indefinitely.
+    if (user.mustChangePassword) {
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 1000 * 60 * 30).toISOString();
+
+      db.prepare('INSERT INTO passwordResets (token, userId, expiresAt, used, createdAt) VALUES (?, ?, ?, 0, ?)')
+        .run(token, user.id, expiresAt, new Date().toISOString());
+
+      return res.json({ ok: true, mustChangePassword: true, resetUrl: 'new-password.html?token=' + token });
+    }
+
     // Regenerating the session on login gives this login a brand new
     // session ID (and forces a fresh Set-Cookie to actually reach the
     // browser) instead of reusing whatever session — and whatever cookie
@@ -737,7 +2591,9 @@ app.post('/api/login', authLimiter, async function (req, res) {
       req.session.email = user.email;
       req.session.fullName = user.fullName;
       req.session.role = user.role;
+      req.session.companyId = user.companyId;
       req.session.preferredLanguage = user.preferredLanguage || 'en';
+      req.session.hybridMode = Boolean(user.hybridMode);
 
       // "Remember me" extends the session cookie to 30 days, so it
       // survives closing and reopening the browser/app. Left unchecked,
@@ -832,7 +2688,12 @@ app.post('/api/reset-password', authLimiter, async function (req, res) {
     const passwordHash = await bcrypt.hash(password, 12);
 
     const applyReset = db.transaction(function () {
-      db.prepare('UPDATE users SET passwordHash = ? WHERE id = ?').run(passwordHash, reset.userId);
+      // Clearing mustChangePassword here too means this same endpoint
+      // finishes both an ordinary forgotten-password reset and the
+      // required first-time reset on an admin-created account — whichever
+      // path got someone to this token, they've now set a real password of
+      // their own.
+      db.prepare('UPDATE users SET passwordHash = ?, mustChangePassword = 0 WHERE id = ?').run(passwordHash, reset.userId);
       db.prepare('UPDATE passwordResets SET used = 1 WHERE token = ?').run(token);
     });
 
@@ -1132,6 +2993,7 @@ async function continueWhatsAppReportFlow(user, wa, message, text) {
     const newId = insertReport(
       Object.assign({}, fields, { technician: user.fullName || user.email, status: 'Open', diagnosis: diagnosis, date: new Date().toISOString().slice(0, 10) }),
       user.id,
+      user.companyId,
       'whatsapp'
     );
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ask Tervexa</title>
+    <title>Billing & plans - Tervexa</title>
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -42,27 +42,46 @@
     </header>
 
     <main>
-      <div class="page-card">
+      <div class="page-card page-card--wide">
 
         <div class="page-card-header">
-          <div class="page-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+          <div class="page-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
           <div class="page-card-header-text">
-            <h1 data-i18n="chat.heading">Ask Tervexa</h1>
-            <p data-i18n="chat.subtitle">Ask a quick question about equipment, installation, after-sales or an application concern. For anything you need on record, submit a report instead.</p>
+            <h1 data-i18n="billing.pageTitle">Billing & plans</h1>
+            <p data-i18n="billing.intro">See your current plan, upgrade for more seats and unlimited reports, or manage an existing subscription.</p>
           </div>
-          <button type="button" id="clear-chat-btn" class="btn-secondary btn-small chat-clear-btn" data-i18n="chat.clearChat">Clear chat</button>
         </div>
 
-        <span id="clear-chat-error" class="field-error" hidden></span>
+        <p id="billing-checkout-banner" class="admin-feedback" hidden></p>
 
-        <div class="chat-window" id="chat-window">
-          <div class="chat-message chat-message--assistant" data-i18n="chat.welcomeMessage">Ask me anything about the equipment you are working on. I can help with diagnosis, installation steps, after-sales questions or application and process concerns.</div>
+        <div class="admin-company-card">
+          <h2 data-i18n="billing.current.heading">Current plan</h2>
+          <p><span data-i18n="admin.company.planLabel">Plan:</span> <span class="plan-badge" id="billing-current-plan">—</span></p>
+          <p id="billing-trial-status" class="field-hint" hidden></p>
+          <p id="billing-current-cycle" class="field-hint" hidden></p>
+          <p id="billing-current-renewal" class="field-hint" hidden></p>
+          <p id="billing-current-pastdue" class="field-hint field-error" hidden data-i18n="billing.current.pastDue">Your last payment didn't go through — please update your payment method to avoid losing access.</p>
+          <button type="button" class="btn-secondary btn-small" id="billing-cancel-btn" data-i18n="billing.current.cancel" hidden>Cancel subscription</button>
         </div>
 
-        <form id="chat-form" class="chat-form">
-          <textarea id="chat-input" rows="2" placeholder="Type your question..." data-i18n-placeholder="chat.inputPlaceholder"></textarea>
-          <button id="chat-send" type="submit" data-i18n="chat.send">Send</button>
-        </form>
+        <div class="billing-cycle-toggle" role="group" aria-label="Billing cycle">
+          <button type="button" class="billing-cycle-btn is-active" id="billing-cycle-monthly" data-i18n="billing.cycle.monthly">Monthly</button>
+          <button type="button" class="billing-cycle-btn" id="billing-cycle-annual" data-i18n="billing.cycle.annual">Annual — 10% off</button>
+        </div>
+
+        <div class="billing-plans-grid" id="billing-plans-grid">
+          <p id="billing-plans-loading" data-i18n="billing.loading">Loading plans...</p>
+        </div>
+
+        <div id="billing-provider-picker" class="billing-provider-picker" hidden>
+          <div class="billing-provider-picker-inner">
+            <h3 data-i18n="billing.providerPicker.heading">Choose how to pay</h3>
+            <p class="field-hint" id="billing-provider-picker-plan"></p>
+            <div id="billing-provider-buttons" class="billing-provider-buttons"></div>
+            <p id="billing-provider-error" class="field-error" hidden></p>
+            <button type="button" class="btn-secondary btn-small" id="billing-provider-cancel" data-i18n="billing.providerPicker.close">Close</button>
+          </div>
+        </div>
 
       </div>
     </main>

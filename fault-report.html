@@ -7,7 +7,7 @@
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="decorated-bg">
 
     <header>
         <nav>
@@ -19,6 +19,7 @@
               <a href="fault-report.html" data-i18n="nav.reportFault">Report a fault</a>
               <a href="fault-log.html" data-i18n="nav.faultLog">Fault log</a>
               <a href="chat.html" data-i18n="nav.askAI">Ask AI</a>
+              <a href="admin.html" data-i18n="nav.admin" hidden>Admin</a>
               <a href="login.html" data-i18n="nav.login">Login</a>
               <a href="signup.html" data-i18n="nav.signup">Sign up</a>
             </div>
@@ -44,8 +45,11 @@
       <div class="page-card">
 
         <div class="page-card-header">
-          <h1 id="page-title" data-i18n="report.pageTitle">Submit a fault report</h1>
-          <p id="page-subtitle" data-i18n="report.pageSubtitle">Fill in the details below. The AI will analyse your report and suggest a diagnosis.</p>
+          <div class="page-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="6" width="14" height="15" rx="2"/><path d="M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1z"/><path d="M9 12h6M9 16h6"/></svg></div>
+          <div class="page-card-header-text">
+            <h1 id="page-title" data-i18n="report.pageTitle">Submit a fault report</h1>
+            <p id="page-subtitle" data-i18n="report.pageSubtitle">Fill in the details below. The AI will analyse your report and suggest a diagnosis.</p>
+          </div>
         </div>
 
         <form id="fault-form">
@@ -123,7 +127,7 @@
 
             <div class="form-group install-only hidden">
               <label for="equipment-model" data-i18n="report.equipmentModelLabel">Equipment make and model</label>
-              <input type="text" id="equipment-model" name="equipment-model" placeholder="e.g. Hologic Panther" data-i18n-placeholder="report.equipmentModelPlaceholder">
+              <input type="text" id="equipment-model" name="equipment-model" placeholder="Enter equipment model" data-i18n-placeholder="report.equipmentModelPlaceholder">
             </div>
 
             <div class="form-group aftersales-only hidden">
@@ -212,10 +216,22 @@
         <p id="diagnosis-text"></p>
         <a href="#" id="result-chat" class="btn-primary" data-i18n="common.continueInChat" hidden>Continue in chat</a>
       </div>
+
+      <div id="diagnosis-animation" class="diag-anim" hidden>
+        <div class="diag-anim-header">
+          <div class="diag-anim-badge"></div>
+          <div class="diag-anim-heading"></div>
+        </div>
+        <div class="diag-anim-track"></div>
+        <div class="diag-anim-footer">
+          <button type="button" class="btn-secondary btn-small diag-anim-tailor-btn" hidden></button>
+          <p class="field-error diag-anim-tailor-error" hidden></p>
+        </div>
+      </div>
     </main>
 
     <footer>
-      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html" data-i18n="footer.privacy">Privacy</a><span class="footer-sep">|</span><a href="terms.html" data-i18n="footer.terms">Terms</a><span class="footer-sep">|</span><span data-i18n="footer.security">Security</span><span class="footer-sep">|</span><span data-i18n="footer.help">Help</span><span class="footer-sep">|</span>v1.0.0</p>
+      <p class="footer-line">© 2026 TERVEXA<span class="footer-sep">|</span><a href="privacy.html" data-i18n="footer.privacy">Privacy</a><span class="footer-sep">|</span><a href="terms.html" data-i18n="footer.terms">Terms</a><span class="footer-sep">|</span><a href="security.html" data-i18n="footer.security">Security</a><span class="footer-sep">|</span><a href="help.html" data-i18n="footer.help">Help</a><span class="footer-sep">|</span><a href="whats-new.html">v1.1.0</a></p>
     </footer>
 
 <script src="js/i18n.js"></script>
