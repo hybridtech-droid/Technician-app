@@ -2241,6 +2241,10 @@ footer .footer-line a:hover {
   transition: width 0.3s ease;
 }
 
+.usage-bar-fill.is-full {
+  background: #c0392b;
+}
+
 .audit-details-cell {
   color: #6b7280;
   font-size: 13px;

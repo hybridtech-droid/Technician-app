@@ -130,11 +130,13 @@ app.get(protectedPages, function (req, res, next) {
 });
 
 // fault-report.html additionally needs a field-facing role — supervisors,
-// managers and admins manage the log rather than submit to it. Anyone
-// logged in but not allowed to submit gets sent to the log instead of a
-// dead end.
+// managers and (company) admins manage the log rather than submit to it,
+// but an individual ("Just me") account's admin is that account's only
+// user and does need to reach this page — see canSubmitReports() above.
+// Anyone logged in but not allowed to submit gets sent to the log instead
+// of a dead end.
 app.get('/fault-report.html', function (req, res, next) {
-  if (submitReportRoles.includes(req.session.role)) {
+  if (canSubmitReports(req.session.role, req.session.companyId)) {
     return next();
   }
 
@@ -262,9 +264,28 @@ function requireAuth(req, res, next) {
 const viewOwnReportsOnlyRoles = ['technician', 'field-application-specialist'];
 const editAnyReportRoles = ['supervisor', 'manager', 'admin'];
 const deleteReportRoles = ['manager', 'admin'];
-const submitReportRoles = ['technician', 'field-application-specialist', 'engineer', 'admin'];
+// A company's admin manages/reviews the fault log rather than submitting to
+// it (same tier as manager, see editAnyReportRoles/deleteReportRoles above)
+// — but an individual ("Just me") account's one and only user also holds
+// the 'admin' role (see the signup handler's finalRole logic), and for that
+// person 'admin' has to mean field worker too, since there's no one else on
+// the account to do the actual reporting. canSubmitReports() below is what
+// tells those two 'admin' cases apart; don't add 'admin' back to this plain
+// array, or a company admin regains the ability to submit reports, which
+// is exactly the tiered-permission boundary this list exists to draw.
+const submitReportRoles = ['technician', 'field-application-specialist', 'engineer'];
 const exportReportsRoles = ['engineer', 'supervisor', 'manager', 'admin'];
 const adminRoles = ['admin'];
+
+// See the comment on submitReportRoles above for why this isn't just
+// `submitReportRoles.includes(role)`.
+function canSubmitReports(role, companyId) {
+  if (submitReportRoles.includes(role)) return true;
+  if (role !== 'admin' || !companyId) return false;
+
+  const companyRow = db.prepare('SELECT isIndividual FROM companies WHERE id = ?').get(companyId);
+  return Boolean(companyRow && companyRow.isIndividual);
+}
 
 // Maps each field-facing role to the request types that fall inside their
 // normal scope of work — the request-type picker on fault-report.html
@@ -279,12 +300,17 @@ const adminRoles = ['admin'];
 // hands-on repair knowledge and application/process knowledge, and which
 // role actually owns it varies by company.
 //
+// 'training' sits with field-application-specialist only: it typically
+// follows an engineer's installation (see 'installation' above) once the
+// equipment is live, and training the people who'll run it day to day is
+// application/process knowledge, not repair work.
+//
 // This is a UX default, not the security boundary on its own — see
 // hybridMode below and its enforcement in POST/GET /api/reports.
 const ROLE_REQUEST_TYPES = {
   technician: ['fault'],
   engineer: ['fault', 'installation', 'after-sales'],
-  'field-application-specialist': ['application', 'after-sales']
+  'field-application-specialist': ['application', 'after-sales', 'training']
 };
 
 function requireRole(allowedRoles) {
@@ -390,8 +416,10 @@ function accountTypeFor(companyRow) {
   return (companyRow && companyRow.isIndividual) ? 'individual' : 'company';
 }
 
-const INDIVIDUAL_TRIAL_DAYS = 14;
-const COMPANY_TRIAL_DAYS = 30;
+// Same free-trial length for every new account, individual or company —
+// 14 days, after which the account either upgrades to a paid plan or drops
+// to the free tier's normal (no-trial) seat/report limits.
+const TRIAL_DAYS = 14;
 
 function trialEndsAtFor(days, fromISO) {
   return new Date(new Date(fromISO).getTime() + days * 24 * 60 * 60 * 1000).toISOString();
@@ -534,7 +562,7 @@ function logAudit(companyId, actor, action, target, details) {
 // Whitelists matching the actual <option value="..."> sets in the HTML
 // forms, so a direct API call can't slip in a value the UI never offers
 // (an unrecognized status, a made-up role, etc).
-const VALID_REQUEST_TYPES = ['fault', 'installation', 'after-sales', 'application'];
+const VALID_REQUEST_TYPES = ['fault', 'installation', 'after-sales', 'application', 'training'];
 const VALID_REPORT_STATUSES = ['Open', 'In progress', 'Resolved'];
 const VALID_ROLES = ['technician', 'field-application-specialist', 'engineer', 'supervisor', 'manager', 'admin'];
 
@@ -658,7 +686,7 @@ app.get('/api/health', function (req, res) {
 app.get('/api/me', function (req, res) {
   if (req.session && req.session.userId && isActiveUser(req.session.userId)) {
     const companyRow = req.session.companyId
-      ? db.prepare('SELECT name FROM companies WHERE id = ?').get(req.session.companyId)
+      ? db.prepare('SELECT name, isIndividual FROM companies WHERE id = ?').get(req.session.companyId)
       : null;
 
     return res.json({
@@ -667,6 +695,10 @@ app.get('/api/me', function (req, res) {
       fullName: req.session.fullName,
       role: req.session.role,
       companyName: companyRow ? companyRow.name : '',
+      // Lets the client tell an individual ("Just me") admin apart from a
+      // company admin — same role, very different nav/permissions (see
+      // canSubmitReports() and the fault-report.html nav link in main.js).
+      isIndividual: Boolean(companyRow && companyRow.isIndividual),
       preferredLanguage: req.session.preferredLanguage || 'en',
       uiTranslatedLanguages: UI_TRANSLATED_LANGUAGES,
       hybridMode: Boolean(req.session.hybridMode),
@@ -740,6 +772,8 @@ function buildDiagnosisPrompt(fields) {
     warrantyStatus,
     applicationImpact,
     recurring,
+    trainingType,
+    traineeAudience,
     hasPhoto,
     language
   } = fields;
@@ -748,7 +782,8 @@ function buildDiagnosisPrompt(fields) {
     fault: 'You are assisting a field service technician with a fault diagnosis. Give likely causes and the checks to run, in order.',
     installation: 'You are assisting a field service engineer with an equipment installation or commissioning. Give the checks and steps for this stage, and flag anything that must be verified before handover.',
     'after-sales': 'You are assisting with an after-sales support case on equipment already installed. Give likely causes, what to check, and whether this needs a site visit or can be resolved remotely.',
-    application: 'You are assisting a field application specialist with an application or process concern. Assess the likely cause, suggest how to troubleshoot it, and recommend corrective actions including any contamination or process-control measures.'
+    application: 'You are assisting a field application specialist with an application or process concern. Assess the likely cause, suggest how to troubleshoot it, and recommend corrective actions including any contamination or process-control measures.',
+    training: 'You are assisting a field application specialist preparing to train staff on this equipment. Suggest what the session should cover, in order, and flag anything the trainees commonly get wrong or should demonstrate back before being signed off.'
   };
 
   const brief = briefs[requestType] || briefs.fault;
@@ -784,6 +819,12 @@ function buildDiagnosisPrompt(fields) {
     context = context +
       'Affected area: ' + applicationImpact + '\n' +
       'Recurrence: ' + recurring + '\n';
+  }
+
+  if (requestType === 'training') {
+    context = context +
+      'Training type: ' + trainingType + '\n' +
+      'Trainees: ' + traineeAudience + '\n';
   }
 
   // Equipment-specific background, when the report's own text matches a
@@ -942,7 +983,7 @@ app.post('/api/diagnose', requireAuth, aiLimiter, async function (req, res) {
 // fallback, so any failure here just means the frontend keeps showing the
 // generic version — nothing about the diagnosis itself depends on it.
 app.post('/api/diagnose/animate', requireAuth, aiLimiter, async function (req, res) {
-  const { requestType, equipment, faultType, applicationImpact, description, diagnosis, language } = req.body;
+  const { requestType, equipment, faultType, applicationImpact, trainingType, description, diagnosis, language } = req.body;
 
   if (!description || !diagnosis) {
     return res.status(400).json({ error: 'Missing description or diagnosis.' });
@@ -964,6 +1005,9 @@ app.post('/api/diagnose/animate', requireAuth, aiLimiter, async function (req, r
   }
   if (applicationImpact) {
     context += 'Affected area: ' + applicationImpact + '\n';
+  }
+  if (trainingType) {
+    context += 'Training type: ' + trainingType + '\n';
   }
 
   const knowledgeNotes = getEquipmentKnowledge(equipment, [description, diagnosis, faultType, applicationImpact].filter(Boolean).join(' '));
@@ -1110,6 +1154,7 @@ const EXPORT_LABELS = {
   hvac: 'HVAC and refrigeration', software: 'Software and controls', structural: 'Structural and civil',
   biomedical: 'Biomedical', other: 'Other', critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low',
   fault: 'Fault', installation: 'Installation', 'after-sales': 'After-sales', application: 'Application',
+  training: 'Training',
   'under-1-month': 'Under 1 month', '1-6-months': '1 to 6 months', '6-12-months': '6 to 12 months',
   '1-3-years': '1 to 3 years', 'over-3-years': 'Over 3 years', 'under-warranty': 'Under warranty',
   'service-contract': 'Under service contract', expired: 'Expired', unknown: 'Not known',
@@ -1121,7 +1166,10 @@ const EXPORT_LABELS = {
   'first-time': 'First time observed', intermittent: 'Intermittent', consistent: 'Happens consistently',
   consumable: 'Consumable or reagent', worsening: 'Getting worse over time', 'component-failure': 'Component failure',
   wear: 'Normal wear', 'installation-error': 'Installation or setup error', 'user-error': 'User or operator error',
-  'power-supply': 'Power supply or environment', 'no-fault-found': 'No fault found'
+  'power-supply': 'Power supply or environment', 'no-fault-found': 'No fault found',
+  'new-install': 'New installation handover', refresher: 'Refresher training', 'new-staff': 'New staff onboarding',
+  'software-update': 'Software or workflow update', operators: 'Operators', supervisors: 'Lab supervisors',
+  mixed: 'Mixed group'
 };
 
 function exportLabel(value) {
@@ -1508,12 +1556,14 @@ function insertReport(r, userId, companyId, channel) {
     INSERT INTO reports (
       id, technician, equipment, location, requestType, type, severity, onset,
       installStage, equipmentModel, timeSinceInstall, warrantyStatus,
-      applicationImpact, recurring, date, status, description, diagnosis,
+      applicationImpact, recurring, trainingType, traineeAudience,
+      date, status, description, diagnosis,
       rootCause, resolutionNotes, resolvedDate, userId, companyId, channel
     ) VALUES (
       @id, @technician, @equipment, @location, @requestType, @type, @severity, @onset,
       @installStage, @equipmentModel, @timeSinceInstall, @warrantyStatus,
-      @applicationImpact, @recurring, @date, @status, @description, @diagnosis,
+      @applicationImpact, @recurring, @trainingType, @traineeAudience,
+      @date, @status, @description, @diagnosis,
       @rootCause, @resolutionNotes, @resolvedDate, @userId, @companyId, @channel
     )
   `);
@@ -1533,6 +1583,8 @@ function insertReport(r, userId, companyId, channel) {
     warrantyStatus: r.warrantyStatus || '',
     applicationImpact: r.applicationImpact || '',
     recurring: r.recurring || '',
+    trainingType: r.trainingType || '',
+    traineeAudience: r.traineeAudience || '',
     date: r.date || '',
     status: r.status || 'Open',
     description: r.description || '',
@@ -1548,7 +1600,16 @@ function insertReport(r, userId, companyId, channel) {
   return newId;
 }
 
-app.post('/api/reports', requireAuth, requireRole(submitReportRoles), function (req, res) {
+app.post('/api/reports', requireAuth, function (req, res, next) {
+  // Not a plain requireRole(submitReportRoles) here because whether 'admin'
+  // may submit depends on whether this is an individual ("Just me") account
+  // — see canSubmitReports() above.
+  if (canSubmitReports(req.session.role, req.session.companyId)) {
+    return next();
+  }
+
+  res.status(403).json({ error: 'Your account does not have access to this.' });
+}, function (req, res) {
   const r = req.body;
 
   if (!r) {
@@ -1560,10 +1621,11 @@ app.post('/api/reports', requireAuth, requireRole(submitReportRoles), function (
   }
 
   // Role-scoped request types (see ROLE_REQUEST_TYPES above) — a role with
-  // no entry there (only admin reaches this route unscoped; supervisor/
-  // manager can't submit at all, per submitReportRoles) is never blocked
-  // here. hybridMode is the account's own opt-in escape hatch for work
-  // that genuinely spans more than one field.
+  // no entry there (only admin reaches this route unscoped, and only for an
+  // individual account per canSubmitReports() above; supervisor/manager
+  // can't submit at all) is never blocked here. hybridMode is the account's
+  // own opt-in escape hatch for work that genuinely spans more than one
+  // field.
   const scopedTypes = ROLE_REQUEST_TYPES[req.session.role];
   if (scopedTypes && !req.session.hybridMode && !scopedTypes.includes(r.requestType || 'fault')) {
     return res.status(403).json({
@@ -2455,7 +2517,7 @@ app.post('/api/signup', authLimiter, async function (req, res) {
 
       if (mode === 'create') {
         const newInviteCode = generateUniqueInviteCode();
-        const trialEndsAt = trialEndsAtFor(COMPANY_TRIAL_DAYS, now);
+        const trialEndsAt = trialEndsAtFor(TRIAL_DAYS, now);
         const companyResult = db.prepare(
           "INSERT INTO companies (name, inviteCode, planTier, createdAt, isIndividual, trialEndsAt) VALUES (?, ?, 'free', ?, 0, ?)"
         ).run(companyName.trim(), newInviteCode, now, trialEndsAt);
@@ -2466,12 +2528,12 @@ app.post('/api/signup', authLimiter, async function (req, res) {
         // and never surfaced as a "company name" field on the form. Gets
         // its own invite code too, so nothing special has to happen later
         // if this person ever wants to add a teammate. isIndividual is what
-        // gives it the tighter 1-seat free cap and the shorter 14-day
-        // trial instead of a team's 30 days (see effectiveLimitsFor /
-        // trialEndsAtFor in the PLAN_TIERS section above).
+        // gives it the tighter 1-seat free cap (see effectiveLimitsFor in
+        // the PLAN_TIERS section above) — the trial length itself is the
+        // same 14 days as a company account.
         const newInviteCode = generateUniqueInviteCode();
         const soloName = (fullName && fullName.trim()) ? fullName.trim() : 'Individual account';
-        const trialEndsAt = trialEndsAtFor(INDIVIDUAL_TRIAL_DAYS, now);
+        const trialEndsAt = trialEndsAtFor(TRIAL_DAYS, now);
         const companyResult = db.prepare(
           "INSERT INTO companies (name, inviteCode, planTier, createdAt, isIndividual, trialEndsAt) VALUES (?, ?, 'free', ?, 1, ?)"
         ).run(soloName, newInviteCode, now, trialEndsAt);
@@ -2594,6 +2656,30 @@ app.post('/api/login', authLimiter, async function (req, res) {
       req.session.companyId = user.companyId;
       req.session.preferredLanguage = user.preferredLanguage || 'en';
       req.session.hybridMode = Boolean(user.hybridMode);
+
+      // Individual ("Just me") accounts are priced and sold as one person's
+      // subscription. Unlike a company account — where sharing a login just
+      // means sharing one of several real seats — an individual account has
+      // exactly one user by design, so a shared login there is a direct way
+      // for other people to use the product without ever subscribing
+      // themselves. This won't stop someone determined to take turns with
+      // the same login, but it does stop the common case of several people
+      // being logged in and using it at once: logging in here logs out
+      // whatever session(s) this account already had elsewhere. Scoped to
+      // individual accounts only — a company user legitimately switching
+      // between their phone and laptop shouldn't get bounced.
+      if (user.companyId) {
+        const companyRow = db.prepare('SELECT isIndividual FROM companies WHERE id = ?').get(user.companyId);
+        if (companyRow && companyRow.isIndividual) {
+          try {
+            db.prepare(
+              "DELETE FROM sessions WHERE sid != ? AND json_extract(sess, '$.userId') = ?"
+            ).run(req.sessionID, user.id);
+          } catch (err) {
+            console.error('Could not clear other sessions for individual account:', err.message);
+          }
+        }
+      }
 
       // "Remember me" extends the session cookie to 30 days, so it
       // survives closing and reopening the browser/app. Left unchecked,

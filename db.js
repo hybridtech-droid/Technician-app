@@ -83,6 +83,27 @@ try {
   }
 }
 
+// trainingType/traineeAudience back the 'training' request type (field
+// application specialists training operators or staff on equipment,
+// typically following an engineer's installation — see ROLE_REQUEST_TYPES
+// in server.js). Same pattern as installStage/equipmentModel etc. above:
+// added after the table already existed, so it's a best-effort migration.
+try {
+  db.exec('ALTER TABLE reports ADD COLUMN trainingType TEXT');
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    throw err;
+  }
+}
+
+try {
+  db.exec('ALTER TABLE reports ADD COLUMN traineeAudience TEXT');
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    throw err;
+  }
+}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS counters (
     name TEXT PRIMARY KEY,

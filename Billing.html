@@ -12,7 +12,7 @@
     <header>
         <nav>
             <span class="brand">Tervexa</span>
-            <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">☰</button>
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu" data-i18n-aria-label="nav.toggleMenu">☰</button>
             <div class="nav-links">
               <a href="index.html" data-i18n="nav.home">Home</a>
               <a href="about.html" data-i18n="nav.about">About</a>
@@ -23,20 +23,12 @@
               <a href="login.html" data-i18n="nav.login">Login</a>
               <a href="signup.html" data-i18n="nav.signup">Sign up</a>
             </div>
-            <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language">
+            <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language" data-i18n-aria-label="nav.selectLanguage" data-i18n-title="nav.selectLanguage">
                 <option value="en">English</option>
                 <option value="fr">Français</option>
                 <option value="es">Español</option>
-                <option value="de">Deutsch</option>
                 <option value="pt">Português</option>
-                <option value="ar">العربية</option>
-                <option value="zh">中文</option>
-                <option value="hi">हिन्दी</option>
                 <option value="sw">Kiswahili</option>
-                <option value="ru">Русский</option>
-                <option value="ja">日本語</option>
-                <option value="ko">한국어</option>
-                <option value="sv">Svenska</option>
             </select>
         </nav>
     </header>
@@ -64,7 +56,7 @@
           <button type="button" class="btn-secondary btn-small" id="billing-cancel-btn" data-i18n="billing.current.cancel" hidden>Cancel subscription</button>
         </div>
 
-        <div class="billing-cycle-toggle" role="group" aria-label="Billing cycle">
+        <div class="billing-cycle-toggle" role="group" aria-label="Billing cycle" data-i18n-aria-label="billing.cycleGroupLabel">
           <button type="button" class="billing-cycle-btn is-active" id="billing-cycle-monthly" data-i18n="billing.cycle.monthly">Monthly</button>
           <button type="button" class="billing-cycle-btn" id="billing-cycle-annual" data-i18n="billing.cycle.annual">Annual — 10% off</button>
         </div>

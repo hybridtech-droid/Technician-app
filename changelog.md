@@ -15,6 +15,68 @@ ships, rather than waiting for a big backlog.
 
 ---
 
+## [1.2.0] - 2026-09-10
+
+Role-scoped request types, a fifth request type for training, a full i18n
+coverage audit, and billing/trial fixes surfaced by finally running the
+billing test suites that had sat unrun since they were written.
+
+### Added
+
+- **Role-scoped request types + hybrid mode.** Each field-facing role now
+  defaults to seeing/submitting only its own request types — technician:
+  fault only; engineer: fault, installation, after-sales; field
+  application specialist: application, after-sales. A per-account
+  "hybrid mode" toggle (nav button) lifts the restriction everywhere at
+  once for jobs that genuinely cross fields. Enforced server-side on both
+  submission (403 with an `outsideScope` flag) and the fault log view, not
+  just hidden in the UI. Supervisor/manager/admin remain unscoped, same as
+  before.
+- **Fifth request type: Training (field application specialist only).**
+  Training now follows the same pattern as the other four types — its own
+  `#request-type` option, two type-specific fields (training type, trainee
+  audience), a tailored AI diagnosis prompt, fault-log filter/detail
+  rendering, and full i18n across all 5 languages.
+- `nav.hybridModeOff` / `nav.hybridModeOn` / `nav.hybridModeTooltip` keys
+  added across en/fr/es/pt/sw.
+
+### Changed
+
+- **Free trial unified to 14 days for every new account, individual or
+  company.** Company signups previously got a 30-day trial versus 14 days
+  for individual signups; both now use the same trial length.
+- **Language selector cleaned up to the 5 languages that actually have
+  translations** (en/fr/es/pt/sw) — removed 8 dead options (German,
+  Arabic, Chinese, Hindi, Russian, Japanese, Korean, Swedish) that
+  silently fell back to English when picked, across all 17 real pages.
+- Menu-toggle, language-selector and billing-cycle accessibility labels
+  (`aria-label`/`title`) are now translated instead of hardcoded English —
+  added `data-i18n-title` support to `applyTranslations()`.
+
+### Fixed
+
+- **Usage bars on the admin panel didn't turn red once usage hit 100% of
+  the plan limit.** `renderUsageStat()` was setting an inline
+  `background-color` that a CSS `background` gradient shorthand was
+  silently painting over. Fixed by toggling a `.is-full` class instead, so
+  the color override actually applies.
+- Ran the two billing test suites (seat/report grace-then-block behavior,
+  and provider webhook signature verification + plan upgrades) for the
+  first time since they were written — both pass clean (34/34, 23/23);
+  this is what surfaced the usage-bar bug above via the required
+  screenshot review step.
+
+### Notes for next time
+
+- Real Paystack/Flutterwave/Stripe test-mode keys are still needed before
+  billing goes live — everything above is verified against fake/no keys,
+  since this environment has no real provider sandbox access.
+- The trial countdown is currently visible only to a company's admin (on
+  the Admin panel and Billing page) — a deliberate choice, not a gap:
+  renewing the plan is the admin's job, not each field employee's.
+
+---
+
 ## [1.1.0] - 2026-08-31
 
 Real role-based permissions. The six roles on the signup form (technician,

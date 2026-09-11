@@ -12,7 +12,7 @@
     <header>
         <nav>
             <span class="brand">Tervexa</span>
-            <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">☰</button>
+            <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu" data-i18n-aria-label="nav.toggleMenu">☰</button>
             <div class="nav-links">
               <a href="index.html" data-i18n="nav.home">Home</a>
               <a href="about.html" data-i18n="nav.about">About</a>
@@ -23,20 +23,12 @@
               <a href="login.html" data-i18n="nav.login">Login</a>
               <a href="signup.html" data-i18n="nav.signup">Sign up</a>
             </div>
-            <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language">
+            <select class="lang-selector" id="lang-selector" aria-label="Select language" title="Select language" data-i18n-aria-label="nav.selectLanguage" data-i18n-title="nav.selectLanguage">
                 <option value="en">English</option>
                 <option value="fr">Français</option>
                 <option value="es">Español</option>
-                <option value="de">Deutsch</option>
                 <option value="pt">Português</option>
-                <option value="ar">العربية</option>
-                <option value="zh">中文</option>
-                <option value="hi">हिन्दी</option>
                 <option value="sw">Kiswahili</option>
-                <option value="ru">Русский</option>
-                <option value="ja">日本語</option>
-                <option value="ko">한국어</option>
-                <option value="sv">Svenska</option>
             </select>
         </nav>
     </header>
@@ -61,6 +53,7 @@
               <option value="installation" data-i18n="report.requestType.installation">Installation and commissioning</option>
               <option value="after-sales" data-i18n="report.requestType.afterSales">After-sales support</option>
               <option value="application" data-i18n="report.requestType.application">Application and process support</option>
+              <option value="training" data-i18n="report.requestType.training">Training and orientation</option>
             </select>
           </div>
 
@@ -175,6 +168,29 @@
                 <option value="intermittent" data-i18n="report.recurring.intermittent">Intermittent</option>
                 <option value="consistent" data-i18n="report.recurring.consistent">Happens consistently</option>
                 <option value="worsening" data-i18n="report.recurring.worsening">Getting worse over time</option>
+              </select>
+            </div>
+
+            <div class="form-group training-only hidden">
+              <label for="training-type" data-i18n="report.trainingTypeLabel">Training type</label>
+              <select id="training-type" name="training-type">
+                <option value="" data-i18n="report.trainingTypeDefault">-- Select training type --</option>
+                <option value="new-install" data-i18n="report.trainingType.newInstall">New installation handover</option>
+                <option value="refresher" data-i18n="report.trainingType.refresher">Refresher training</option>
+                <option value="new-staff" data-i18n="report.trainingType.newStaff">New staff onboarding</option>
+                <option value="software-update" data-i18n="report.trainingType.softwareUpdate">Software or workflow update</option>
+                <option value="other" data-i18n="report.trainingType.other">Other</option>
+              </select>
+            </div>
+
+            <div class="form-group training-only hidden">
+              <label for="trainee-audience" data-i18n="report.traineeAudienceLabel">Who is being trained?</label>
+              <select id="trainee-audience" name="trainee-audience">
+                <option value="" data-i18n="report.traineeAudienceDefault">-- Select audience --</option>
+                <option value="operators" data-i18n="report.traineeAudience.operators">Operators</option>
+                <option value="supervisors" data-i18n="report.traineeAudience.supervisors">Lab supervisors</option>
+                <option value="mixed" data-i18n="report.traineeAudience.mixed">Mixed group</option>
+                <option value="other" data-i18n="report.traineeAudience.other">Other</option>
               </select>
             </div>
 

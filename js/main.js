@@ -424,6 +424,14 @@ function prettyLabel(value) {
     installation: 'Installation',
     'after-sales': 'After-sales',
     application: 'Application',
+    training: 'Training',
+    'new-install': 'New installation handover',
+    refresher: 'Refresher training',
+    'new-staff': 'New staff onboarding',
+    'software-update': 'Software or workflow update',
+    operators: 'Operators',
+    supervisors: 'Lab supervisors',
+    mixed: 'Mixed group',
     'under-1-month': 'Under 1 month',
     '1-6-months': '1 to 6 months',
     '6-12-months': '6 to 12 months',
@@ -487,7 +495,8 @@ const DIAG_REQUEST_ICONS = {
   fault: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.75-3.75a6 6 0 0 1-7.94 7.93l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z"/></svg>',
   installation: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>',
   'after-sales': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Zm-18 0a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3Z"/></svg>',
-  application: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6"/><path d="M10 3v6.5L4.8 18a1 1 0 0 0 .9 1.5h12.6a1 1 0 0 0 .9-1.5L14 9.5V3"/></svg>'
+  application: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6"/><path d="M10 3v6.5L4.8 18a1 1 0 0 0 .9 1.5h12.6a1 1 0 0 0 .9-1.5L14 9.5V3"/></svg>',
+  training: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.92a1 1 0 0 0-.02-1.84L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.84l8.57 3.9a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>'
 };
 
 // diag.anim.detail.<segment>.<step> i18n keys use camelCase segments —
@@ -498,7 +507,8 @@ const DIAG_REQUEST_I18N_SEGMENT = {
   fault: 'fault',
   installation: 'installation',
   'after-sales': 'afterSales',
-  application: 'application'
+  application: 'application',
+  training: 'training'
 };
 
 function diagCategoryLabelFor(fields) {
@@ -508,6 +518,9 @@ function diagCategoryLabelFor(fields) {
   }
   if (requestType === 'application' && fields.applicationImpact) {
     return prettyLabel(fields.applicationImpact).toLowerCase();
+  }
+  if (requestType === 'training' && fields.trainingType) {
+    return prettyLabel(fields.trainingType).toLowerCase();
   }
   return prettyLabel(requestType).toLowerCase();
 }
@@ -625,6 +638,7 @@ async function fetchTailoredDiagSteps(fields, description, diagnosis) {
       equipment: fields.equipment,
       faultType: fields.faultType,
       applicationImpact: fields.applicationImpact,
+      trainingType: fields.trainingType,
       description: description,
       diagnosis: diagnosis,
       language: getStoredLanguage()
@@ -796,6 +810,12 @@ function showFaultDetail(fault) {
   if (fault.recurring) {
     extras.push('Recurrence: ' + prettyLabel(fault.recurring));
   }
+  if (fault.trainingType) {
+    extras.push('Training type: ' + prettyLabel(fault.trainingType));
+  }
+  if (fault.traineeAudience) {
+    extras.push('Trainees: ' + prettyLabel(fault.traineeAudience));
+  }
 
   let extrasEl = document.getElementById('detail-extras');
   extrasEl.textContent = extras.join('  ·  ');
@@ -816,7 +836,8 @@ function showFaultDetail(fault) {
         requestType: fault.requestType || 'fault',
         equipment: fault.equipment,
         faultType: fault.type,
-        applicationImpact: fault.applicationImpact
+        applicationImpact: fault.applicationImpact,
+        trainingType: fault.trainingType
       };
       renderDiagAnimation(detailAnimBox, detailDiagFields, buildGenericDiagSteps(detailDiagFields), false);
       detailAnimBox.hidden = false;
@@ -863,7 +884,8 @@ function applyRequestType(type) {
     fault: 'fault-only',
     installation: 'install-only',
     'after-sales': 'aftersales-only',
-    application: 'application-only'
+    application: 'application-only',
+    training: 'training-only'
   };
 
   Object.keys(groupClasses).forEach(function (key) {
@@ -889,7 +911,8 @@ function applyRequestType(type) {
     fault: t('report.descriptionLabel.fault'),
     installation: t('report.descriptionLabel.installation'),
     'after-sales': t('report.descriptionLabel.afterSales'),
-    application: t('report.descriptionLabel.application')
+    application: t('report.descriptionLabel.application'),
+    training: t('report.descriptionLabel.training')
   };
 
   if (descriptionLabel) {
@@ -920,6 +943,12 @@ function applyRequestType(type) {
       subtitle: t('report.wording.application.subtitle'),
       button: t('report.wording.application.button'),
       result: t('report.wording.application.result')
+    },
+    training: {
+      title: t('report.wording.training.title'),
+      subtitle: t('report.wording.training.subtitle'),
+      button: t('report.wording.training.button'),
+      result: t('report.wording.training.result')
     }
   };
 
@@ -1305,6 +1334,15 @@ const ADMIN_ROLES = ['admin'];
 const DELETE_REPORT_ROLES = ['manager', 'admin'];
 const EXPORT_REPORTS_ROLES = ['engineer', 'supervisor', 'manager', 'admin'];
 
+// Mirrors canSubmitReports() in server.js: a company admin manages the
+// fault log rather than submitting to it, but an individual ("Just me")
+// account's admin IS that account's only user, so for them 'admin' has to
+// mean field worker too. /api/me's isIndividual is what tells the two
+// apart — see its comment in server.js.
+function canSubmitReports(data) {
+  return SUBMIT_REPORT_ROLES.includes(data.role) || (data.role === 'admin' && data.isIndividual);
+}
+
 // Keeps the nav's hybrid-mode toggle's visible text/state in sync with
 // whatever /api/me most recently reported — pulled out on its own since
 // both updateAuthNav() and the tervexa:languagechange handler need it.
@@ -1339,7 +1377,7 @@ async function updateAuthNav() {
         signupLink.hidden = true;
       }
       if (reportLink) {
-        reportLink.hidden = !SUBMIT_REPORT_ROLES.includes(data.role);
+        reportLink.hidden = !canSubmitReports(data);
       }
       if (adminLink) {
         adminLink.hidden = !ADMIN_ROLES.includes(data.role);
@@ -1611,7 +1649,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         requestType: data.get('request-type'),
         equipment: data.get('equipment-id'),
         faultType: data.get('fault-type'),
-        applicationImpact: data.get('application-impact')
+        applicationImpact: data.get('application-impact'),
+        trainingType: data.get('training-type')
       };
 
       try {
@@ -1629,6 +1668,8 @@ document.addEventListener('DOMContentLoaded', async function () {
           warrantyStatus: data.get('warranty-status'),
           applicationImpact: data.get('application-impact'),
           recurring: data.get('recurring'),
+          trainingType: data.get('training-type'),
+          traineeAudience: data.get('trainee-audience'),
           photo: photo
         }, function (partialText) {
           // Replaces the "Analysing your report..." placeholder the moment
@@ -1664,6 +1705,8 @@ document.addEventListener('DOMContentLoaded', async function () {
           warrantyStatus: data.get('warranty-status'),
           applicationImpact: data.get('application-impact'),
           recurring: data.get('recurring'),
+          trainingType: data.get('training-type'),
+          traineeAudience: data.get('trainee-audience'),
           date: new Date().toLocaleDateString('en-GB'),
           status: 'Open',
           description: description,
@@ -2559,7 +2602,14 @@ document.addEventListener('DOMContentLoaded', async function () {
           barEl.parentElement.hidden = false;
           let pct = Math.max(0, Math.min(100, Math.round((used / limit) * 100)));
           barEl.style.width = pct + '%';
-          barEl.style.backgroundColor = pct >= 100 ? '#c0392b' : '';
+          // .usage-bar-fill's CSS sets `background` (the shorthand, which
+          // paints a gradient as background-image) — setting the inline
+          // style.backgroundColor here does nothing visually, because a
+          // background-image layer always paints over background-color
+          // underneath it. Toggle a class instead so the "at/over limit"
+          // colour actually overrides the gradient (see .usage-bar-fill.is-full
+          // in style.css).
+          barEl.classList.toggle('is-full', pct >= 100);
         }
       }
     }
